@@ -88,7 +88,7 @@ function ReviewPage() {
           name: it.name || "Item",
           price: Number((it.price / Math.max(1, it.split_count)).toFixed(2)),
           quantity: it.quantity,
-          category: it.category,
+          category: it.category as "Food" | "Transport" | "Utilities" | "Shopping" | "Entertainment" | "Others",
           is_essential: it.is_essential,
         }));
         const { error: iErr } = await supabase.from("receipt_items").insert(rows);
