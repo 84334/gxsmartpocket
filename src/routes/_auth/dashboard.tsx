@@ -86,6 +86,28 @@ function Dashboard() {
         <StatCard icon={Sparkles} label="Health score" value={score ? `${score.score} · ${score.label}` : "—"} />
       </div>
 
+      <Card className="p-5 bg-gradient-card shadow-elegant">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="font-semibold flex items-center gap-2"><AlertCircle className="w-4 h-4 text-warning" /> Non-essential purchases</h3>
+          <span className="text-xs text-muted-foreground">{items.filter(i => !i.is_essential).length} items · {fmtRM(wasteful)}</span>
+        </div>
+        {items.filter(i => !i.is_essential).length ? (
+          <div className="grid sm:grid-cols-2 gap-1.5">
+            {items.filter(i => !i.is_essential).map(it => (
+              <div key={it.id} className="text-sm flex items-center justify-between gap-2 px-2 py-1.5 rounded-md bg-warning/10 border border-warning/20">
+                <span className="truncate">
+                  {it.name}
+                  <span className="text-xs text-muted-foreground"> · {it.category}</span>
+                </span>
+                <span className="font-medium">{fmtRM(Number(it.price) * Number(it.quantity))}</span>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-sm text-muted-foreground">No non-essential spending detected this month — great job!</div>
+        )}
+      </Card>
+
       <div className="grid lg:grid-cols-2 gap-4">
         <Card className="p-5 bg-gradient-card shadow-elegant">
           <h3 className="font-semibold mb-4">Spending by category</h3>
