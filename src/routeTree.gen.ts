@@ -15,6 +15,7 @@ import { Route as AuthRouteImport } from './routes/_auth'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthUploadRouteImport } from './routes/_auth/upload'
 import { Route as AuthReceiptsRouteImport } from './routes/_auth/receipts'
+import { Route as AuthExpensesRouteImport } from './routes/_auth/expenses'
 import { Route as AuthDashboardRouteImport } from './routes/_auth/dashboard'
 
 const SignupRoute = SignupRouteImport.update({
@@ -46,6 +47,11 @@ const AuthReceiptsRoute = AuthReceiptsRouteImport.update({
   path: '/receipts',
   getParentRoute: () => AuthRoute,
 } as any)
+const AuthExpensesRoute = AuthExpensesRouteImport.update({
+  id: '/expenses',
+  path: '/expenses',
+  getParentRoute: () => AuthRoute,
+} as any)
 const AuthDashboardRoute = AuthDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
@@ -57,6 +63,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
   '/dashboard': typeof AuthDashboardRoute
+  '/expenses': typeof AuthExpensesRoute
   '/receipts': typeof AuthReceiptsRoute
   '/upload': typeof AuthUploadRoute
 }
@@ -65,6 +72,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
   '/dashboard': typeof AuthDashboardRoute
+  '/expenses': typeof AuthExpensesRoute
   '/receipts': typeof AuthReceiptsRoute
   '/upload': typeof AuthUploadRoute
 }
@@ -75,14 +83,29 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
   '/_auth/dashboard': typeof AuthDashboardRoute
+  '/_auth/expenses': typeof AuthExpensesRoute
   '/_auth/receipts': typeof AuthReceiptsRoute
   '/_auth/upload': typeof AuthUploadRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/login' | '/signup' | '/dashboard' | '/receipts' | '/upload'
+  fullPaths:
+    | '/'
+    | '/login'
+    | '/signup'
+    | '/dashboard'
+    | '/expenses'
+    | '/receipts'
+    | '/upload'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/login' | '/signup' | '/dashboard' | '/receipts' | '/upload'
+  to:
+    | '/'
+    | '/login'
+    | '/signup'
+    | '/dashboard'
+    | '/expenses'
+    | '/receipts'
+    | '/upload'
   id:
     | '__root__'
     | '/'
@@ -90,6 +113,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/signup'
     | '/_auth/dashboard'
+    | '/_auth/expenses'
     | '/_auth/receipts'
     | '/_auth/upload'
   fileRoutesById: FileRoutesById
@@ -145,6 +169,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthReceiptsRouteImport
       parentRoute: typeof AuthRoute
     }
+    '/_auth/expenses': {
+      id: '/_auth/expenses'
+      path: '/expenses'
+      fullPath: '/expenses'
+      preLoaderRoute: typeof AuthExpensesRouteImport
+      parentRoute: typeof AuthRoute
+    }
     '/_auth/dashboard': {
       id: '/_auth/dashboard'
       path: '/dashboard'
@@ -157,12 +188,14 @@ declare module '@tanstack/react-router' {
 
 interface AuthRouteChildren {
   AuthDashboardRoute: typeof AuthDashboardRoute
+  AuthExpensesRoute: typeof AuthExpensesRoute
   AuthReceiptsRoute: typeof AuthReceiptsRoute
   AuthUploadRoute: typeof AuthUploadRoute
 }
 
 const AuthRouteChildren: AuthRouteChildren = {
   AuthDashboardRoute: AuthDashboardRoute,
+  AuthExpensesRoute: AuthExpensesRoute,
   AuthReceiptsRoute: AuthReceiptsRoute,
   AuthUploadRoute: AuthUploadRoute,
 }
