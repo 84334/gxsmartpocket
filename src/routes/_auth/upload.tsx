@@ -33,8 +33,9 @@ function UploadPage() {
       const { data, error } = await supabase.functions.invoke("scan-receipt", { body: { imageUrl: signed.signedUrl } });
       if (error) throw error;
       if ((data as any)?.error) throw new Error((data as any).error);
-      toast.success("Receipt scanned!");
-      navigate({ to: "/receipts" });
+      sessionStorage.setItem("pending_receipt", JSON.stringify({ parsed: (data as any).parsed, imageUrl: signed.signedUrl, previewUrl: preview }));
+      toast.success("Review the details");
+      navigate({ to: "/review" });
     } catch (e: any) {
       toast.error(e.message ?? "Failed to scan");
     } finally { setBusy(false); }
