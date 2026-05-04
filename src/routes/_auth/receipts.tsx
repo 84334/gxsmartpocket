@@ -33,6 +33,10 @@ function Receipts() {
         </div>
         <Link to="/upload"><Button variant="hero"><Upload /> New</Button></Link>
       </div>
+      <div className="flex flex-wrap gap-4 text-xs text-muted-foreground">
+        <span className="inline-flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-success" /> Essential (groceries, transport, bills)</span>
+        <span className="inline-flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-warning" /> Non-essential (snacks, treats, impulse buys)</span>
+      </div>
       {!list.length && (
         <Card className="p-10 text-center bg-gradient-card shadow-elegant">
           <Receipt className="w-10 h-10 mx-auto text-muted-foreground" />

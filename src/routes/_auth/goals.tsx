@@ -41,12 +41,32 @@ function Goals() {
   };
   const remove = async (id: string) => { await supabase.from("savings_goals").delete().eq("id", id); load(); };
 
+  const totalSaved = list.reduce((s, g) => s + Number(g.current_amount || 0), 0);
+  const totalTarget = list.reduce((s, g) => s + Number(g.target_amount || 0), 0);
+
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Savings goals</h1>
         <p className="text-sm text-muted-foreground">Plan a trip, a gadget, or an emergency fund.</p>
       </div>
+
+      {list.length > 0 && (
+        <div className="grid sm:grid-cols-3 gap-4">
+          <Card className="p-4 bg-gradient-card shadow-elegant">
+            <div className="text-xs text-muted-foreground">Total saved</div>
+            <div className="text-2xl font-bold mt-1 text-primary">{fmtRM(totalSaved)}</div>
+          </Card>
+          <Card className="p-4 bg-gradient-card shadow-elegant">
+            <div className="text-xs text-muted-foreground">Total target</div>
+            <div className="text-2xl font-bold mt-1">{fmtRM(totalTarget)}</div>
+          </Card>
+          <Card className="p-4 bg-gradient-card shadow-elegant">
+            <div className="text-xs text-muted-foreground">Remaining to save</div>
+            <div className="text-2xl font-bold mt-1">{fmtRM(Math.max(0, totalTarget - totalSaved))}</div>
+          </Card>
+        </div>
+      )}
 
       <Card className="p-5 bg-gradient-card shadow-elegant">
         <h3 className="font-semibold mb-3">New goal</h3>
