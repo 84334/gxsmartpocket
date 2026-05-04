@@ -14,7 +14,197 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      fixed_expenses: {
+        Row: {
+          amount: number
+          category: string | null
+          created_at: string
+          id: string
+          name: string
+          user_id: string
+        }
+        Insert: {
+          amount?: number
+          category?: string | null
+          created_at?: string
+          id?: string
+          name: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          category?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      insights: {
+        Row: {
+          body: string
+          created_at: string
+          id: string
+          severity: string
+          title: string
+          user_id: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          id?: string
+          severity?: string
+          title: string
+          user_id: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          id?: string
+          severity?: string
+          title?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          display_name: string | null
+          id: string
+          monthly_income: number | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          display_name?: string | null
+          id: string
+          monthly_income?: number | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          monthly_income?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      receipt_items: {
+        Row: {
+          category: Database["public"]["Enums"]["spending_category"]
+          created_at: string
+          id: string
+          is_essential: boolean
+          name: string
+          price: number
+          quantity: number
+          receipt_id: string
+          user_id: string
+        }
+        Insert: {
+          category?: Database["public"]["Enums"]["spending_category"]
+          created_at?: string
+          id?: string
+          is_essential?: boolean
+          name: string
+          price?: number
+          quantity?: number
+          receipt_id: string
+          user_id: string
+        }
+        Update: {
+          category?: Database["public"]["Enums"]["spending_category"]
+          created_at?: string
+          id?: string
+          is_essential?: boolean
+          name?: string
+          price?: number
+          quantity?: number
+          receipt_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "receipt_items_receipt_id_fkey"
+            columns: ["receipt_id"]
+            isOneToOne: false
+            referencedRelation: "receipts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      receipts: {
+        Row: {
+          created_at: string
+          currency: string | null
+          id: string
+          image_url: string | null
+          merchant: string | null
+          purchased_at: string | null
+          raw_text: string | null
+          status: Database["public"]["Enums"]["receipt_status"]
+          total_amount: number | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          currency?: string | null
+          id?: string
+          image_url?: string | null
+          merchant?: string | null
+          purchased_at?: string | null
+          raw_text?: string | null
+          status?: Database["public"]["Enums"]["receipt_status"]
+          total_amount?: number | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          currency?: string | null
+          id?: string
+          image_url?: string | null
+          merchant?: string | null
+          purchased_at?: string | null
+          raw_text?: string | null
+          status?: Database["public"]["Enums"]["receipt_status"]
+          total_amount?: number | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      savings_goals: {
+        Row: {
+          created_at: string
+          current_amount: number
+          id: string
+          target_amount: number
+          target_date: string | null
+          title: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          current_amount?: number
+          id?: string
+          target_amount?: number
+          target_date?: string | null
+          title: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          current_amount?: number
+          id?: string
+          target_amount?: number
+          target_date?: string | null
+          title?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -23,7 +213,14 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      receipt_status: "processing" | "completed" | "failed"
+      spending_category:
+        | "Food"
+        | "Transport"
+        | "Utilities"
+        | "Shopping"
+        | "Entertainment"
+        | "Others"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +347,16 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      receipt_status: ["processing", "completed", "failed"],
+      spending_category: [
+        "Food",
+        "Transport",
+        "Utilities",
+        "Shopping",
+        "Entertainment",
+        "Others",
+      ],
+    },
   },
 } as const
