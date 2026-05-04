@@ -14,6 +14,7 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as AuthRouteImport } from './routes/_auth'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthUploadRouteImport } from './routes/_auth/upload'
+import { Route as AuthReviewRouteImport } from './routes/_auth/review'
 import { Route as AuthReceiptsRouteImport } from './routes/_auth/receipts'
 import { Route as AuthGoalsRouteImport } from './routes/_auth/goals'
 import { Route as AuthExpensesRouteImport } from './routes/_auth/expenses'
@@ -41,6 +42,11 @@ const IndexRoute = IndexRouteImport.update({
 const AuthUploadRoute = AuthUploadRouteImport.update({
   id: '/upload',
   path: '/upload',
+  getParentRoute: () => AuthRoute,
+} as any)
+const AuthReviewRoute = AuthReviewRouteImport.update({
+  id: '/review',
+  path: '/review',
   getParentRoute: () => AuthRoute,
 } as any)
 const AuthReceiptsRoute = AuthReceiptsRouteImport.update({
@@ -72,6 +78,7 @@ export interface FileRoutesByFullPath {
   '/expenses': typeof AuthExpensesRoute
   '/goals': typeof AuthGoalsRoute
   '/receipts': typeof AuthReceiptsRoute
+  '/review': typeof AuthReviewRoute
   '/upload': typeof AuthUploadRoute
 }
 export interface FileRoutesByTo {
@@ -82,6 +89,7 @@ export interface FileRoutesByTo {
   '/expenses': typeof AuthExpensesRoute
   '/goals': typeof AuthGoalsRoute
   '/receipts': typeof AuthReceiptsRoute
+  '/review': typeof AuthReviewRoute
   '/upload': typeof AuthUploadRoute
 }
 export interface FileRoutesById {
@@ -94,6 +102,7 @@ export interface FileRoutesById {
   '/_auth/expenses': typeof AuthExpensesRoute
   '/_auth/goals': typeof AuthGoalsRoute
   '/_auth/receipts': typeof AuthReceiptsRoute
+  '/_auth/review': typeof AuthReviewRoute
   '/_auth/upload': typeof AuthUploadRoute
 }
 export interface FileRouteTypes {
@@ -106,6 +115,7 @@ export interface FileRouteTypes {
     | '/expenses'
     | '/goals'
     | '/receipts'
+    | '/review'
     | '/upload'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -116,6 +126,7 @@ export interface FileRouteTypes {
     | '/expenses'
     | '/goals'
     | '/receipts'
+    | '/review'
     | '/upload'
   id:
     | '__root__'
@@ -127,6 +138,7 @@ export interface FileRouteTypes {
     | '/_auth/expenses'
     | '/_auth/goals'
     | '/_auth/receipts'
+    | '/_auth/review'
     | '/_auth/upload'
   fileRoutesById: FileRoutesById
 }
@@ -174,6 +186,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthUploadRouteImport
       parentRoute: typeof AuthRoute
     }
+    '/_auth/review': {
+      id: '/_auth/review'
+      path: '/review'
+      fullPath: '/review'
+      preLoaderRoute: typeof AuthReviewRouteImport
+      parentRoute: typeof AuthRoute
+    }
     '/_auth/receipts': {
       id: '/_auth/receipts'
       path: '/receipts'
@@ -210,6 +229,7 @@ interface AuthRouteChildren {
   AuthExpensesRoute: typeof AuthExpensesRoute
   AuthGoalsRoute: typeof AuthGoalsRoute
   AuthReceiptsRoute: typeof AuthReceiptsRoute
+  AuthReviewRoute: typeof AuthReviewRoute
   AuthUploadRoute: typeof AuthUploadRoute
 }
 
@@ -218,6 +238,7 @@ const AuthRouteChildren: AuthRouteChildren = {
   AuthExpensesRoute: AuthExpensesRoute,
   AuthGoalsRoute: AuthGoalsRoute,
   AuthReceiptsRoute: AuthReceiptsRoute,
+  AuthReviewRoute: AuthReviewRoute,
   AuthUploadRoute: AuthUploadRoute,
 }
 

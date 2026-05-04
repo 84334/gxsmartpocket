@@ -101,36 +101,7 @@ serve(async (req) => {
     if (!call) throw new Error("no tool call returned");
     const parsed = JSON.parse(call.function.arguments);
 
-    const { data: receipt, error: rErr } = await supabase
-      .from("receipts")
-      .insert({
-        user_id: user.id,
-        merchant: parsed.merchant ?? "Unknown",
-        currency: parsed.currency ?? "RM",
-        total_amount: parsed.total_amount ?? 0,
-        purchased_at: parsed.purchased_at ?? new Date().toISOString(),
-        image_url: imageUrl,
-        status: "completed",
-      })
-      .select()
-      .single();
-    if (rErr) throw rErr;
-
-    const items = (parsed.items ?? []).map((it: any) => ({
-      receipt_id: receipt.id,
-      user_id: user.id,
-      name: it.name,
-      price: Number(it.price) || 0,
-      quantity: Number(it.quantity) || 1,
-      category: it.category ?? "Others",
-      is_essential: it.is_essential ?? true,
-    }));
-    if (items.length) {
-      const { error: iErr } = await supabase.from("receipt_items").insert(items);
-      if (iErr) throw iErr;
-    }
-
-    return new Response(JSON.stringify({ receipt, items }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    return new Response(JSON.stringify({ parsed, imageUrl }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (e) {
     console.error("scan-receipt error", e);
     return new Response(JSON.stringify({ error: e instanceof Error ? e.message : "unknown" }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
