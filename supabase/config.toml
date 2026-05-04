@@ -1,0 +1,7 @@
+project_id = "nillndtcrhssrouidjoi"
+
+[functions.scan-receipt]
+verify_jwt = true
+
+[functions.generate-insights]
+verify_jwt = true
