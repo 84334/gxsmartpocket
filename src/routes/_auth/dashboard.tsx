@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { fmtRM, startOfMonth } from "@/lib/format";
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip } from "recharts";
-import { Sparkles, Upload, AlertCircle, TrendingUp, Wallet, RefreshCw } from "lucide-react";
+import { Sparkles, Upload, AlertCircle, TrendingUp, Wallet, RefreshCw, PiggyBank } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_auth/dashboard")({ component: Dashboard });
@@ -17,21 +17,24 @@ function Dashboard() {
   const [income, setIncome] = useState(0);
   const [fixed, setFixed] = useState<any[]>([]);
   const [insights, setInsights] = useState<any[]>([]);
+  const [goals, setGoals] = useState<any[]>([]);
   const [score, setScore] = useState<{score: number; label: string} | null>(null);
   const [genLoading, setGenLoading] = useState(false);
 
   const load = async () => {
     const since = startOfMonth();
-    const [{ data: it }, { data: pr }, { data: fx }, { data: ins }] = await Promise.all([
+    const [{ data: it }, { data: pr }, { data: fx }, { data: ins }, { data: gl }] = await Promise.all([
       supabase.from("receipt_items").select("*").gte("created_at", since),
       supabase.from("profiles").select("monthly_income").maybeSingle(),
       supabase.from("fixed_expenses").select("*"),
       supabase.from("insights").select("*").order("created_at", { ascending: false }),
+      supabase.from("savings_goals").select("current_amount,target_amount,title"),
     ]);
     setItems(it ?? []);
     setIncome(Number(pr?.monthly_income ?? 0));
     setFixed(fx ?? []);
     setInsights(ins ?? []);
+    setGoals(gl ?? []);
   };
   useEffect(() => { load(); }, []);
 
@@ -39,6 +42,8 @@ function Dashboard() {
   const fixedTotal = fixed.reduce((s, i) => s + Number(i.amount), 0);
   const wasteful = items.filter(i => !i.is_essential).reduce((s, i) => s + Number(i.price) * Number(i.quantity), 0);
   const remaining = income - fixedTotal - totalSpend;
+  const totalSavings = goals.reduce((s, g) => s + Number(g.current_amount || 0), 0);
+  const totalTarget = goals.reduce((s, g) => s + Number(g.target_amount || 0), 0);
 
   const byCat = Object.entries(items.reduce<Record<string, number>>((acc, i) => {
     const k = i.category; acc[k] = (acc[k] ?? 0) + Number(i.price) * Number(i.quantity); return acc;
@@ -82,9 +87,30 @@ function Dashboard() {
       <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard icon={Wallet} label="Total spent" value={fmtRM(totalSpend)} />
         <StatCard icon={TrendingUp} label="Money left" value={fmtRM(remaining)} accent={remaining < 0} />
+        <StatCard icon={PiggyBank} label="Total savings" value={fmtRM(totalSavings)} />
         <StatCard icon={AlertCircle} label="Non-essential" value={fmtRM(wasteful)} />
-        <StatCard icon={Sparkles} label="Health score" value={score ? `${score.score} · ${score.label}` : "—"} />
       </div>
+
+      <Card className="p-5 bg-gradient-card shadow-elegant">
+        <div className="flex items-center justify-between flex-wrap gap-2 mb-3">
+          <h3 className="font-semibold flex items-center gap-2"><PiggyBank className="w-4 h-4 text-primary" /> Savings overview</h3>
+          <div className="text-xs text-muted-foreground">
+            {fmtRM(totalSavings)} saved of {fmtRM(totalTarget)} target · Health score: {score ? `${score.score} · ${score.label}` : "—"}
+          </div>
+        </div>
+        {goals.length ? (
+          <div className="grid sm:grid-cols-2 gap-2">
+            {goals.map((g, idx) => (
+              <div key={idx} className="flex items-center justify-between text-sm px-3 py-2 rounded-md bg-muted/50">
+                <span className="truncate">{g.title}</span>
+                <span className="font-medium">{fmtRM(g.current_amount)} <span className="text-xs text-muted-foreground">/ {fmtRM(g.target_amount)}</span></span>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-sm text-muted-foreground">No savings goals yet — create one in Goals to start tracking.</div>
+        )}
+      </Card>
 
       <Card className="p-5 bg-gradient-card shadow-elegant">
         <div className="flex items-center justify-between mb-3">
