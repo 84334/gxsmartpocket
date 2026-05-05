@@ -31,7 +31,7 @@ function Dashboard() {
       supabase.from("profiles").select("monthly_income, daily_spending_limit").maybeSingle(),
       supabase.from("fixed_expenses").select("*"),
       supabase.from("insights").select("*").order("created_at", { ascending: false }).limit(4),
-      supabase.from("savings_goals").select("current_amount,target_amount,title,in_wallet"),
+      supabase.from("savings_goals").select("current_amount,target_amount,title"),
       supabase.from("receipt_items").select("price,quantity").gte("created_at", today),
     ]);
     setItems(it ?? []);
@@ -60,8 +60,7 @@ function Dashboard() {
   const totalSpend = items.reduce((s, i) => s + Number(i.price) * Number(i.quantity), 0);
   const fixedTotal = fixed.reduce((s, i) => s + Number(i.amount), 0);
   const totalSavings = goals.reduce((s, g) => s + Number(g.current_amount || 0), 0);
-  const lockedSavings = goals.reduce((s, g) => s + (g.in_wallet ? 0 : Number(g.current_amount || 0)), 0);
-  const remaining = income - fixedTotal - totalSpend - lockedSavings;
+  const remaining = income - fixedTotal - totalSpend - totalSavings;
   const remainingDaily = Math.max(0, dailyLimit - todaySpend);
   const dailyPct = dailyLimit > 0 ? Math.min(100, (todaySpend / dailyLimit) * 100) : 0;
 
