@@ -35,6 +35,7 @@ function Goals() {
   const [withdrawId, setWithdrawId] = useState<string | null>(null);
   const [withdrawAmt, setWithdrawAmt] = useState("");
   const [cooldown, setCooldown] = useState(0);
+  const [celebrateGoal, setCelebrateGoal] = useState<any | null>(null);
   const cdRef = useRef<number | null>(null);
   const autoRan = useRef(false);
 
@@ -77,7 +78,12 @@ function Goals() {
 
   const autoSaveToday = async (goals: any[], limit: number, spend: number) => {
     const today = todayDate();
-    const pending = goals.filter(g => Number(g.daily_save_amount) > 0 && g.last_saved_on !== today);
+    const pending = goals.filter(g =>
+      Number(g.daily_save_amount) > 0 &&
+      g.last_saved_on !== today &&
+      !g.completed_at &&
+      Number(g.current_amount) < Number(g.target_amount)
+    );
     if (!pending.length) return;
     let remaining = Math.max(0, limit - spend);
     let savedTotal = 0;
@@ -111,13 +117,27 @@ function Goals() {
 
   const updateCurrent = async (id: string, v: number) => {
     const prev = list.find(g => g.id === id);
-    await supabase.from("savings_goals").update({ current_amount: v }).eq("id", id);
-    if (prev && v > Number(prev.current_amount)) await bumpStreakOnSave();
+    if (!prev) return;
+    const target = Number(prev.target_amount);
+    const justCompleted = !prev.completed_at && v >= target && target > 0;
+    const patch: any = { current_amount: v };
+    if (justCompleted) {
+      patch.completed_at = new Date().toISOString();
+      patch.daily_save_amount = 0;
+    }
+    await supabase.from("savings_goals").update(patch).eq("id", id);
+    if (v > Number(prev.current_amount)) await bumpStreakOnSave();
+    if (justCompleted) setCelebrateGoal({ ...prev, ...patch });
     load();
   };
 
   const updateDaily = async (id: string, v: number) => {
     const newVal = Math.max(0, v);
+    const goal = list.find(g => g.id === id);
+    if (goal?.completed_at) {
+      toast.error("This goal is completed — auto-save is off.");
+      return;
+    }
     const othersTotal = list
       .filter(g => g.id !== id)
       .reduce((s, g) => s + Number(g.daily_save_amount || 0), 0);
@@ -134,6 +154,22 @@ function Goals() {
   };
 
   const remove = async (id: string) => { await supabase.from("savings_goals").delete().eq("id", id); load(); };
+
+  const moveToWallet = async () => {
+    if (!celebrateGoal) return;
+    await supabase.from("savings_goals").update({ in_wallet: true }).eq("id", celebrateGoal.id);
+    toast.success("🔒 Locked in your Goal Wallet");
+    setCelebrateGoal(null); load();
+  };
+
+  const releaseToBalance = async () => {
+    if (!celebrateGoal) return;
+    // Releasing returns the saved funds to the user's available balance
+    // by zeroing this goal out (it stays as a completed record).
+    await supabase.from("savings_goals").update({ current_amount: 0, in_wallet: false }).eq("id", celebrateGoal.id);
+    toast.success(`${fmtRM(celebrateGoal.current_amount)} returned to your available balance`);
+    setCelebrateGoal(null); load();
+  };
 
   const saveDailyLimit = async () => {
     const v = Number(limitDraft);
