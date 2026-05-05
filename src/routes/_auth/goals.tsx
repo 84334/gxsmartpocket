@@ -117,7 +117,19 @@ function Goals() {
   };
 
   const updateDaily = async (id: string, v: number) => {
-    await supabase.from("savings_goals").update({ daily_save_amount: Math.max(0, v) }).eq("id", id);
+    const newVal = Math.max(0, v);
+    const othersTotal = list
+      .filter(g => g.id !== id)
+      .reduce((s, g) => s + Number(g.daily_save_amount || 0), 0);
+    if (othersTotal + newVal > dailyLimit) {
+      const remaining = Math.max(0, dailyLimit - othersTotal);
+      toast.error(
+        `Total auto-save (${fmtRM(othersTotal + newVal)}) exceeds your daily limit of ${fmtRM(dailyLimit)}. Max for this goal: ${fmtRM(remaining)}.`
+      );
+      load();
+      return;
+    }
+    await supabase.from("savings_goals").update({ daily_save_amount: newVal }).eq("id", id);
     load();
   };
 
