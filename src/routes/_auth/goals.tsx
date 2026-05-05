@@ -312,12 +312,7 @@ function Goals() {
         <div className="flex items-start justify-between flex-wrap gap-3 mb-4">
           <div>
             <h3 className="font-semibold text-lg">Your savings tree</h3>
-            <p className="text-xs text-muted-foreground">Grows as your daily saving streak builds toward your goal.</p>
-          </div>
-          <div className="flex items-center gap-2">
-            <Label className="text-xs">Streak goal (days)</Label>
-            <Input type="number" className="w-20" defaultValue={streakGoal}
-              onBlur={e => { const v = Number(e.target.value); if (v !== streakGoal) saveStreakGoal(v); }} />
+            <p className="text-xs text-muted-foreground">Grows every day you save money. Miss a day and it resets.</p>
           </div>
         </div>
         <div className="grid md:grid-cols-[1fr_1.2fr] gap-6 items-center">
@@ -325,10 +320,9 @@ function Goals() {
             <SavingsTree streak={streak} goal={streakGoal} />
           </div>
           <div className="space-y-3">
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-2 gap-2">
               <Stat label="Current streak" value={`${streak} 🔥`} accent />
               <Stat label="Longest" value={`${longestStreak}`} />
-              <Stat label="Goal" value={`${streakGoal}d`} />
             </div>
             <Progress value={Math.min(100, (streak / Math.max(1, streakGoal)) * 100)} />
             <p className="text-xs text-muted-foreground">
