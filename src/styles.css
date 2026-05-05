@@ -51,9 +51,9 @@
 :root {
   --radius: 0.875rem;
   /* GXBank: black + dark purple */
-  --background: oklch(0.10 0.02 290);
+  --background: oklch(0.18 0.05 290);
   --foreground: oklch(0.96 0.01 290);
-  --card: oklch(0.20 0.04 292);
+  --card: oklch(0.24 0.06 292);
   --card-foreground: oklch(0.96 0.01 290);
   --popover: oklch(0.22 0.04 292);
   --popover-foreground: oklch(0.96 0.01 290);
@@ -98,7 +98,7 @@
   --chart-4: oklch(0.65 0.2 25);
   --chart-5: oklch(0.5 0.20 280);
 
-  --sidebar: oklch(0.10 0.02 290);
+  --sidebar: oklch(0.13 0.04 290);
   --sidebar-foreground: oklch(0.96 0.01 290);
   --sidebar-primary: oklch(0.65 0.22 295);
   --sidebar-primary-foreground: oklch(0.98 0.01 290);

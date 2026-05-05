@@ -22,7 +22,7 @@ export function AppShell() {
 
   return (
     <div className="min-h-screen flex bg-background">
-      <aside className="hidden md:flex w-64 flex-col bg-sidebar text-sidebar-foreground border-r border-sidebar-border p-4 gap-1">
+      <aside className="hidden md:flex fixed inset-y-0 left-0 w-64 flex-col bg-sidebar text-sidebar-foreground border-r border-sidebar-border p-4 gap-1 z-30">
         <Link to="/dashboard" className="flex items-center gap-2 px-2 py-4 mb-2">
           <div className="w-9 h-9 rounded-xl bg-gradient-mint flex items-center justify-center shadow-glow">
             <Sparkles className="w-5 h-5 text-primary" />
@@ -49,7 +49,7 @@ export function AppShell() {
         </div>
       </aside>
 
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 md:ml-64">
         <header className="md:hidden bg-sidebar text-sidebar-foreground px-4 py-3 flex items-center justify-between">
           <Link to="/dashboard" className="flex items-center gap-2 font-bold">
             <Sparkles className="w-5 h-5 text-accent" /> SmartReceipt
