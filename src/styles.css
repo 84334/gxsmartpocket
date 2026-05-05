@@ -82,11 +82,16 @@
   --shadow-glow: 0 0 60px oklch(0.82 0.16 165 / 0.35);
 
   /* GXBank brand accents */
-  --gx-yellow: oklch(0.88 0.18 95);
-  --gx-yellow-deep: oklch(0.82 0.19 88);
-  --gx-ink: oklch(0.16 0.02 250);
-  --gradient-gx: linear-gradient(135deg, oklch(0.88 0.18 95) 0%, oklch(0.82 0.19 88) 100%);
-  --shadow-gx: 0 12px 36px -14px oklch(0.82 0.19 88 / 0.55);
+  /* GXBank: deep violet-ink + soft purple accent */
+  --gx-violet: oklch(0.62 0.22 295);
+  --gx-violet-soft: oklch(0.78 0.13 300);
+  --gx-ink: oklch(0.18 0.05 290);
+  --gx-ink-2: oklch(0.24 0.08 295);
+  --gx-surface: oklch(0.97 0.01 290);
+  --gradient-gx: linear-gradient(135deg, oklch(0.32 0.12 295) 0%, oklch(0.22 0.09 290) 55%, oklch(0.16 0.05 285) 100%);
+  --gradient-gx-accent: linear-gradient(135deg, oklch(0.72 0.18 295) 0%, oklch(0.58 0.22 290) 100%);
+  --shadow-gx: 0 18px 48px -20px oklch(0.30 0.15 290 / 0.55);
+  --shadow-soft: 0 1px 2px oklch(0.2 0.05 290 / 0.04), 0 8px 24px -12px oklch(0.2 0.05 290 / 0.08);
 
   --chart-1: oklch(0.22 0.06 255);
   --chart-2: oklch(0.72 0.16 175);
@@ -134,8 +139,12 @@
 @utility shadow-elegant { box-shadow: var(--shadow-elegant); }
 @utility shadow-glow { box-shadow: var(--shadow-glow); }
 @utility bg-gradient-gx { background-image: var(--gradient-gx); }
+@utility bg-gradient-gx-accent { background-image: var(--gradient-gx-accent); }
 @utility shadow-gx { box-shadow: var(--shadow-gx); }
-@utility bg-gx-yellow { background-color: var(--gx-yellow); }
+@utility shadow-soft { box-shadow: var(--shadow-soft); }
+@utility bg-gx-violet { background-color: var(--gx-violet); }
+@utility text-gx-violet { color: var(--gx-violet); }
+@utility bg-gx-surface { background-color: var(--gx-surface); }
 @utility text-gx-ink { color: var(--gx-ink); }
 @utility bg-gx-ink { background-color: var(--gx-ink); }
 

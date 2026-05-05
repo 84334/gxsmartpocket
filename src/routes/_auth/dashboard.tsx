@@ -76,21 +76,22 @@ function Dashboard() {
   return (
     <div className="space-y-5">
       {/* GX-style hero balance */}
-      <Card className="p-6 bg-gx-ink text-white border-0 shadow-gx overflow-hidden relative">
-        <div className="absolute -right-12 -bottom-12 w-56 h-56 rounded-full bg-gx-yellow opacity-15 blur-3xl" />
+      <Card className="p-7 bg-gradient-gx text-white border-0 shadow-gx overflow-hidden relative rounded-3xl">
+        <div className="absolute -right-16 -top-16 w-72 h-72 rounded-full bg-white/5 blur-3xl" />
+        <div className="absolute -left-10 -bottom-20 w-60 h-60 rounded-full bg-white/5 blur-3xl" />
         <div className="relative flex items-start justify-between flex-wrap gap-3">
           <div>
-            <div className="text-xs font-medium text-gx-yellow tracking-wide uppercase">GX Wallet</div>
-            <div className="text-3xl md:text-4xl font-bold mt-1">{fmtRM(remaining)}</div>
-            <div className="text-sm text-white/70 mt-1">Money left this month</div>
+            <div className="text-[11px] font-medium text-white/60 tracking-[0.18em] uppercase">Available balance</div>
+            <div className="text-4xl md:text-5xl font-semibold mt-2 tracking-tight">{fmtRM(remaining)}</div>
+            <div className="text-sm text-white/60 mt-1.5">Money left this month</div>
           </div>
           <Link to="/upload">
-            <Button className="bg-gx-yellow text-gx-ink hover:opacity-90 font-semibold">
+            <Button className="bg-white/10 hover:bg-white/15 text-white border border-white/15 backdrop-blur rounded-full px-5 font-medium">
               <Upload className="w-4 h-4" /> Scan receipt
             </Button>
           </Link>
         </div>
-        <div className="relative grid grid-cols-3 gap-3 mt-6 pt-5 border-t border-white/10">
+        <div className="relative grid grid-cols-3 gap-3 mt-7 pt-5 border-t border-white/10">
           <MiniStat label="Spent" value={fmtRM(totalSpend)} />
           <MiniStat label="Saved" value={fmtRM(totalSavings)} accent />
           <MiniStat label="Income" value={fmtRM(income)} />
@@ -98,19 +99,19 @@ function Dashboard() {
       </Card>
 
       {/* Today snapshot */}
-      <Card className="p-5">
+      <Card className="p-5 rounded-2xl border-border/60 shadow-soft">
         <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2">
-            <div className="w-9 h-9 rounded-xl bg-gx-yellow flex items-center justify-center"><Wallet className="w-4 h-4 text-gx-ink" /></div>
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-secondary flex items-center justify-center"><Wallet className="w-4 h-4 text-gx-violet" /></div>
             <div>
               <div className="font-semibold text-sm">Today</div>
               <div className="text-xs text-muted-foreground">{fmtRM(todaySpend)} spent · {fmtRM(remainingDaily)} left</div>
             </div>
           </div>
-          <Link to="/goals" className="text-xs text-primary inline-flex items-center gap-1 hover:underline">Manage <ArrowUpRight className="w-3 h-3" /></Link>
+          <Link to="/goals" className="text-xs text-gx-violet inline-flex items-center gap-1 hover:underline">Manage <ArrowUpRight className="w-3 h-3" /></Link>
         </div>
-        <div className="h-2 rounded-full bg-muted overflow-hidden">
-          <div className={`h-full transition-all ${dailyPct > 80 ? "bg-destructive" : "bg-gradient-gx"}`} style={{ width: `${dailyPct}%` }} />
+        <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+          <div className={`h-full transition-all ${dailyPct > 80 ? "bg-destructive" : "bg-gradient-gx-accent"}`} style={{ width: `${dailyPct}%` }} />
         </div>
         <div className="flex justify-between text-xs text-muted-foreground mt-2">
           <span>{Math.round(dailyPct)}% of daily limit</span>
@@ -120,7 +121,7 @@ function Dashboard() {
 
       {/* Charts: simpler, side-by-side */}
       <div className="grid lg:grid-cols-2 gap-4">
-        <Card className="p-5">
+        <Card className="p-5 rounded-2xl border-border/60 shadow-soft">
           <h3 className="font-semibold text-sm mb-3">Top categories</h3>
           {byCat.length ? (
             <>
@@ -147,7 +148,7 @@ function Dashboard() {
           ) : <Empty msg="No spending yet" />}
         </Card>
 
-        <Card className="p-5">
+        <Card className="p-5 rounded-2xl border-border/60 shadow-soft">
           <h3 className="font-semibold text-sm mb-3">Last 7 days</h3>
           {trend.length ? (
             <div className="h-48"><ResponsiveContainer>
@@ -155,7 +156,7 @@ function Dashboard() {
                 <XAxis dataKey="day" tick={{ fontSize: 11 }} />
                 <YAxis tick={{ fontSize: 11 }} />
                 <Tooltip formatter={(v: any) => fmtRM(Number(v))} />
-                <Bar dataKey="total" fill="var(--gx-yellow-deep)" radius={[6,6,0,0]} />
+                <Bar dataKey="total" fill="var(--gx-violet)" radius={[6,6,0,0]} />
               </BarChart>
             </ResponsiveContainer></div>
           ) : <Empty msg="Trends appear after a few receipts" />}
@@ -164,10 +165,10 @@ function Dashboard() {
 
       {/* Goals quick view */}
       {goals.length > 0 && (
-        <Card className="p-5">
+        <Card className="p-5 rounded-2xl border-border/60 shadow-soft">
           <div className="flex items-center justify-between mb-3">
             <h3 className="font-semibold text-sm">Savings goals</h3>
-            <Link to="/goals" className="text-xs text-primary inline-flex items-center gap-1 hover:underline">View all <ArrowUpRight className="w-3 h-3" /></Link>
+            <Link to="/goals" className="text-xs text-gx-violet inline-flex items-center gap-1 hover:underline">View all <ArrowUpRight className="w-3 h-3" /></Link>
           </div>
           <div className="space-y-2">
             {goals.slice(0, 3).map((g, i) => {
@@ -179,7 +180,7 @@ function Dashboard() {
                     <span className="text-muted-foreground">{fmtRM(g.current_amount)} / {fmtRM(g.target_amount)}</span>
                   </div>
                   <div className="h-1.5 rounded-full bg-muted overflow-hidden">
-                    <div className="h-full bg-gradient-gx" style={{ width: `${pct}%` }} />
+                    <div className="h-full bg-gradient-gx-accent" style={{ width: `${pct}%` }} />
                   </div>
                 </div>
               );
@@ -189,7 +190,7 @@ function Dashboard() {
       )}
 
       {/* Insights */}
-      <Card className="p-5">
+      <Card className="p-5 rounded-2xl border-border/60 shadow-soft">
         <div className="flex items-center justify-between mb-3">
           <h3 className="font-semibold text-sm">Smart tips</h3>
           <Button size="sm" variant="ghost" onClick={generate} disabled={genLoading}>
@@ -221,7 +222,7 @@ function MiniStat({ label, value, accent }: { label: string; value: string; acce
   return (
     <div>
       <div className="text-[10px] text-white/60 uppercase tracking-wide">{label}</div>
-      <div className={`font-semibold mt-0.5 ${accent ? "text-gx-yellow" : "text-white"}`}>{value}</div>
+      <div className={`font-semibold mt-0.5 ${accent ? "text-white" : "text-white/90"}`}>{value}</div>
     </div>
   );
 }
