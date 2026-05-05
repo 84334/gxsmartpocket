@@ -108,7 +108,7 @@ function Dashboard() {
         </div>
       </div>
 
-      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid sm:grid-cols-2 lg:grid-cols-5 gap-4">
         <StatCard icon={Wallet} label="Total spent" value={fmtRM(totalSpend)} />
         <StatCard icon={TrendingUp} label="Money left this month" value={fmtRM(remaining)} accent={remaining < 0} />
         <StatCard icon={PiggyBank} label="Saved this month" value={fmtRM(savedThisMonth)} />
