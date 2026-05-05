@@ -292,40 +292,41 @@ function Goals() {
                 <div className="mt-3 flex items-end gap-2">
                   <div className="flex-1">
                     <Label className="text-[10px] text-muted-foreground">Auto-save / day</Label>
-                    <Input key={`ds-${g.id}-${g.daily_save_amount}`} type="number" className="h-8" defaultValue={Number(g.daily_save_amount || 0)}
-                      onBlur={e => { const v = Number(e.target.value); if (v !== Number(g.daily_save_amount)) updateDaily(g.id, v); }} />
+                    <Input
+                      id={`auto-${g.id}`}
+                      key={`ds-${g.id}-${g.daily_save_amount}`}
+                      type="number"
+                      className="h-8"
+                      defaultValue={Number(g.daily_save_amount || 0)}
+                    />
                   </div>
                   <div className="flex-1">
                     <Label className="text-[10px] text-muted-foreground">Save Extra (RM)</Label>
-                    <div className="flex gap-1">
-                      <Input
-                        id={`save-${g.id}`}
-                        type="number"
-                        className="h-8"
-                        placeholder="0.00"
-                        onKeyDown={e => {
-                          if (e.key === "Enter") {
-                            const v = Number((e.target as HTMLInputElement).value);
-                            if (v > 0) updateCurrent(g.id, Number(g.current_amount) + v);
-                            (e.target as HTMLInputElement).value = "";
-                          }
-                        }}
-                      />
-                      <Button
-                        size="sm"
-                        className="h-8 bg-primary text-primary-foreground hover:opacity-90 rounded-md px-3"
-                        onClick={() => {
-                          const el = document.getElementById(`save-${g.id}`) as HTMLInputElement | null;
-                          const v = Number(el?.value || 0);
-                          if (!v || v <= 0) return toast.error("Enter an amount");
-                          updateCurrent(g.id, Number(g.current_amount) + v);
-                          if (el) el.value = "";
-                        }}
-                      >
-                        Save
-                      </Button>
-                    </div>
+                    <Input id={`save-${g.id}`} type="number" className="h-8" placeholder="0.00" />
                   </div>
+                  <Button
+                    size="sm"
+                    className="h-8 bg-primary text-primary-foreground hover:opacity-90 rounded-md px-3"
+                    onClick={async () => {
+                      const autoEl = document.getElementById(`auto-${g.id}`) as HTMLInputElement | null;
+                      const saveEl = document.getElementById(`save-${g.id}`) as HTMLInputElement | null;
+                      const autoVal = Number(autoEl?.value || 0);
+                      const extraVal = Number(saveEl?.value || 0);
+                      let changed = false;
+                      if (autoVal !== Number(g.daily_save_amount)) {
+                        await updateDaily(g.id, autoVal);
+                        changed = true;
+                      }
+                      if (extraVal > 0) {
+                        await updateCurrent(g.id, Number(g.current_amount) + extraVal);
+                        if (saveEl) saveEl.value = "";
+                        changed = true;
+                      }
+                      if (!changed) toast.error("Nothing to save");
+                    }}
+                  >
+                    Save
+                  </Button>
                   <Button size="sm" variant="outline" className="h-8" onClick={() => startWithdraw(g.id)} disabled={Number(g.current_amount) <= 0}>
                     Withdraw
                   </Button>
