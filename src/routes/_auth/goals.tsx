@@ -117,7 +117,19 @@ function Goals() {
   };
 
   const updateDaily = async (id: string, v: number) => {
-    await supabase.from("savings_goals").update({ daily_save_amount: Math.max(0, v) }).eq("id", id);
+    const newVal = Math.max(0, v);
+    const othersTotal = list
+      .filter(g => g.id !== id)
+      .reduce((s, g) => s + Number(g.daily_save_amount || 0), 0);
+    if (othersTotal + newVal > dailyLimit) {
+      const remaining = Math.max(0, dailyLimit - othersTotal);
+      toast.error(
+        `Total auto-save (${fmtRM(othersTotal + newVal)}) exceeds your daily limit of ${fmtRM(dailyLimit)}. Max for this goal: ${fmtRM(remaining)}.`
+      );
+      load();
+      return;
+    }
+    await supabase.from("savings_goals").update({ daily_save_amount: newVal }).eq("id", id);
     load();
   };
 
@@ -280,7 +292,7 @@ function Goals() {
                 <div className="mt-3 flex items-end gap-2">
                   <div className="flex-1">
                     <Label className="text-[10px] text-muted-foreground">Auto-save / day</Label>
-                    <Input type="number" className="h-8" defaultValue={Number(g.daily_save_amount || 0)}
+                    <Input key={`ds-${g.id}-${g.daily_save_amount}`} type="number" className="h-8" defaultValue={Number(g.daily_save_amount || 0)}
                       onBlur={e => { const v = Number(e.target.value); if (v !== Number(g.daily_save_amount)) updateDaily(g.id, v); }} />
                   </div>
                   <div className="flex-1">
