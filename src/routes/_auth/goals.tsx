@@ -324,7 +324,6 @@ function Goals() {
               <Stat label="Current streak" value={`${streak} 🔥`} accent />
               <Stat label="Longest" value={`${longestStreak}`} />
             </div>
-            <Progress value={Math.min(100, (streak / Math.max(1, streakGoal)) * 100)} />
             <p className="text-xs text-muted-foreground">
               Your streak grows automatically each day you save money toward a goal. Miss a day and it resets to 0.
             </p>
