@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useRouterState } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
@@ -21,6 +21,7 @@ function Dashboard() {
   const [dailyLimit, setDailyLimit] = useState(0);
   const [todaySpend, setTodaySpend] = useState(0);
   const [genLoading, setGenLoading] = useState(false);
+  const isActive = useRouterState({ select: s => s.location.pathname === "/dashboard" });
 
   const load = async () => {
     const since = startOfMonth();
@@ -41,7 +42,20 @@ function Dashboard() {
     setGoals(gl ?? []);
     setTodaySpend((tdy ?? []).reduce((s: number, i: any) => s + Number(i.price) * Number(i.quantity), 0));
   };
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    if (!isActive) return;
+    load();
+    const refresh = () => load();
+    const refreshWhenVisible = () => { if (document.visibilityState === "visible") load(); };
+    window.addEventListener("focus", refresh);
+    window.addEventListener("smartreceipt:balance-updated", refresh);
+    document.addEventListener("visibilitychange", refreshWhenVisible);
+    return () => {
+      window.removeEventListener("focus", refresh);
+      window.removeEventListener("smartreceipt:balance-updated", refresh);
+      document.removeEventListener("visibilitychange", refreshWhenVisible);
+    };
+  }, [isActive]);
 
   const totalSpend = items.reduce((s, i) => s + Number(i.price) * Number(i.quantity), 0);
   const fixedTotal = fixed.reduce((s, i) => s + Number(i.amount), 0);
