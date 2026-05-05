@@ -432,6 +432,33 @@ function Goals() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <Dialog open={!!celebrateGoal} onOpenChange={o => !o && setCelebrateGoal(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="text-2xl">🎉 Goal achieved!</DialogTitle>
+          </DialogHeader>
+          <div className="text-center py-4 space-y-2">
+            <div className="text-5xl">🏆</div>
+            <div className="font-semibold text-lg">{celebrateGoal?.title}</div>
+            <div className="text-sm text-muted-foreground">
+              You saved <span className="text-foreground font-semibold">{fmtRM(celebrateGoal?.current_amount || 0)}</span>. Auto-save for this goal has stopped.
+            </div>
+            <div className="text-sm text-muted-foreground pt-2">What would you like to do next?</div>
+          </div>
+          <DialogFooter className="flex-col sm:flex-col gap-2">
+            <Button onClick={moveToWallet} className="bg-primary text-primary-foreground hover:opacity-90 w-full">
+              🔒 Move to Goal Wallet (locked but accessible)
+            </Button>
+            <Button onClick={releaseToBalance} variant="outline" className="w-full">
+              💰 Transfer back to Available Balance
+            </Button>
+            <Button variant="ghost" onClick={() => setCelebrateGoal(null)} className="w-full">
+              Decide later
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
