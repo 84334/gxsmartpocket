@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 const nav = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/receipts", label: "Receipts", icon: Receipt },
-  { to: "/expenses", label: "Budget", icon: Wallet },
+  { to: "/expenses", label: "Expenses", icon: Wallet },
   { to: "/goals", label: "Goals", icon: Target },
 ];
 
