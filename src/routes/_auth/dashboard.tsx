@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { fmtRM, startOfMonth, startOfToday } from "@/lib/format";
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip } from "recharts";
-import { Sparkles, Upload, AlertCircle, TrendingUp, Wallet, RefreshCw, PiggyBank } from "lucide-react";
+import { Upload, RefreshCw, ArrowUpRight, Wallet } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_auth/dashboard")({ component: Dashboard });
@@ -20,7 +20,6 @@ function Dashboard() {
   const [goals, setGoals] = useState<any[]>([]);
   const [dailyLimit, setDailyLimit] = useState(0);
   const [todaySpend, setTodaySpend] = useState(0);
-  const [score, setScore] = useState<{score: number; label: string} | null>(null);
   const [genLoading, setGenLoading] = useState(false);
 
   const load = async () => {
@@ -30,8 +29,8 @@ function Dashboard() {
       supabase.from("receipt_items").select("*").gte("created_at", since),
       supabase.from("profiles").select("monthly_income, daily_spending_limit").maybeSingle(),
       supabase.from("fixed_expenses").select("*"),
-      supabase.from("insights").select("*").order("created_at", { ascending: false }),
-      supabase.from("savings_goals").select("current_amount,target_amount,title,daily_save_amount"),
+      supabase.from("insights").select("*").order("created_at", { ascending: false }).limit(4),
+      supabase.from("savings_goals").select("current_amount,target_amount,title"),
       supabase.from("receipt_items").select("price,quantity").gte("created_at", today),
     ]);
     setItems(it ?? []);
@@ -46,17 +45,14 @@ function Dashboard() {
 
   const totalSpend = items.reduce((s, i) => s + Number(i.price) * Number(i.quantity), 0);
   const fixedTotal = fixed.reduce((s, i) => s + Number(i.amount), 0);
-  const wasteful = items.filter(i => !i.is_essential).reduce((s, i) => s + Number(i.price) * Number(i.quantity), 0);
   const remaining = income - fixedTotal - totalSpend;
   const totalSavings = goals.reduce((s, g) => s + Number(g.current_amount || 0), 0);
-  const totalTarget = goals.reduce((s, g) => s + Number(g.target_amount || 0), 0);
-  const plannedDaily = goals.reduce((s, g) => s + Number(g.daily_save_amount || 0), 0);
   const remainingDaily = Math.max(0, dailyLimit - todaySpend);
-  const availableSpend = Math.max(0, remainingDaily - plannedDaily);
+  const dailyPct = dailyLimit > 0 ? Math.min(100, (todaySpend / dailyLimit) * 100) : 0;
 
   const byCat = Object.entries(items.reduce<Record<string, number>>((acc, i) => {
     const k = i.category; acc[k] = (acc[k] ?? 0) + Number(i.price) * Number(i.quantity); return acc;
-  }, {})).map(([name, value]) => ({ name, value }));
+  }, {})).map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value).slice(0, 5);
 
   const trend = (() => {
     const map: Record<string, number> = {};
@@ -64,7 +60,7 @@ function Dashboard() {
       const d = new Date(i.created_at).toLocaleDateString("en-MY", { day: "numeric", month: "short" });
       map[d] = (map[d] ?? 0) + Number(i.price) * Number(i.quantity);
     });
-    return Object.entries(map).slice(-10).map(([day, total]) => ({ day, total }));
+    return Object.entries(map).slice(-7).map(([day, total]) => ({ day, total }));
   })();
 
   const generate = async () => {
@@ -73,156 +69,162 @@ function Dashboard() {
     setGenLoading(false);
     if (error) return toast.error(error.message);
     if ((data as any)?.error) return toast.error((data as any).error);
-    setScore({ score: (data as any).health_score, label: (data as any).health_label });
     toast.success("Insights refreshed");
     load();
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <div>
-          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">This month</h1>
-          <p className="text-sm text-muted-foreground">Your real-time financial picture</p>
+    <div className="space-y-5">
+      {/* GX-style hero balance */}
+      <Card className="p-6 bg-gx-ink text-white border-0 shadow-gx overflow-hidden relative">
+        <div className="absolute -right-12 -bottom-12 w-56 h-56 rounded-full bg-gx-yellow opacity-15 blur-3xl" />
+        <div className="relative flex items-start justify-between flex-wrap gap-3">
+          <div>
+            <div className="text-xs font-medium text-gx-yellow tracking-wide uppercase">GX Wallet</div>
+            <div className="text-3xl md:text-4xl font-bold mt-1">{fmtRM(remaining)}</div>
+            <div className="text-sm text-white/70 mt-1">Money left this month</div>
+          </div>
+          <Link to="/upload">
+            <Button className="bg-gx-yellow text-gx-ink hover:opacity-90 font-semibold">
+              <Upload className="w-4 h-4" /> Scan receipt
+            </Button>
+          </Link>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={generate} disabled={genLoading}>
-            <RefreshCw className={genLoading ? "animate-spin" : ""} /> AI Insights
-          </Button>
-          <Link to="/upload"><Button variant="hero"><Upload /> Scan receipt</Button></Link>
-        </div>
-      </div>
-
-      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard icon={Wallet} label="Total spent" value={fmtRM(totalSpend)} />
-        <StatCard icon={TrendingUp} label="Money left" value={fmtRM(remaining)} accent={remaining < 0} />
-        <StatCard icon={PiggyBank} label="Total savings" value={fmtRM(totalSavings)} />
-        <StatCard icon={AlertCircle} label="Non-essential" value={fmtRM(wasteful)} />
-      </div>
-
-      <Card className="p-5 bg-gradient-card shadow-elegant">
-        <div className="flex items-center justify-between flex-wrap gap-2 mb-3">
-          <h3 className="font-semibold flex items-center gap-2"><Wallet className="w-4 h-4 text-primary" /> Today's budget</h3>
-          <Link to="/goals" className="text-xs text-primary underline">Manage</Link>
-        </div>
-        <div className="grid sm:grid-cols-4 gap-3 text-sm">
-          <div className="rounded-lg bg-muted/40 px-3 py-2"><div className="text-[11px] text-muted-foreground">Daily limit</div><div className="font-semibold">{fmtRM(dailyLimit)}</div></div>
-          <div className="rounded-lg bg-muted/40 px-3 py-2"><div className="text-[11px] text-muted-foreground">Spent today</div><div className="font-semibold">{fmtRM(todaySpend)}</div></div>
-          <div className="rounded-lg bg-muted/40 px-3 py-2"><div className="text-[11px] text-muted-foreground">Planned savings</div><div className="font-semibold text-primary">{fmtRM(plannedDaily)}</div></div>
-          <div className="rounded-lg bg-muted/40 px-3 py-2"><div className="text-[11px] text-muted-foreground">Available to spend</div><div className="font-semibold">{fmtRM(availableSpend)}</div></div>
+        <div className="relative grid grid-cols-3 gap-3 mt-6 pt-5 border-t border-white/10">
+          <MiniStat label="Spent" value={fmtRM(totalSpend)} />
+          <MiniStat label="Saved" value={fmtRM(totalSavings)} accent />
+          <MiniStat label="Income" value={fmtRM(income)} />
         </div>
       </Card>
 
-      <Card className="p-5 bg-gradient-card shadow-elegant">
-        <div className="flex items-center justify-between flex-wrap gap-2 mb-3">
-          <h3 className="font-semibold flex items-center gap-2"><PiggyBank className="w-4 h-4 text-primary" /> Savings overview</h3>
-          <div className="text-xs text-muted-foreground">
-            {fmtRM(totalSavings)} saved of {fmtRM(totalTarget)} target · Health score: {score ? `${score.score} · ${score.label}` : "—"}
-          </div>
-        </div>
-        {goals.length ? (
-          <div className="grid sm:grid-cols-2 gap-2">
-            {goals.map((g, idx) => (
-              <div key={idx} className="flex items-center justify-between text-sm px-3 py-2 rounded-md bg-muted/50">
-                <span className="truncate">{g.title}</span>
-                <span className="font-medium">{fmtRM(g.current_amount)} <span className="text-xs text-muted-foreground">/ {fmtRM(g.target_amount)}</span></span>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="text-sm text-muted-foreground">No savings goals yet — create one in Goals to start tracking.</div>
-        )}
-      </Card>
-
-      <Card className="p-5 bg-gradient-card shadow-elegant">
+      {/* Today snapshot */}
+      <Card className="p-5">
         <div className="flex items-center justify-between mb-3">
-          <h3 className="font-semibold flex items-center gap-2"><AlertCircle className="w-4 h-4 text-warning" /> Non-essential purchases</h3>
-          <span className="text-xs text-muted-foreground">{items.filter(i => !i.is_essential).length} items · {fmtRM(wasteful)}</span>
-        </div>
-        {items.filter(i => !i.is_essential).length ? (
-          <div className="grid sm:grid-cols-2 gap-1.5">
-            {items.filter(i => !i.is_essential).map(it => (
-              <div key={it.id} className="text-sm flex items-center justify-between gap-2 px-2 py-1.5 rounded-md bg-warning/10 border border-warning/20">
-                <span className="truncate">
-                  {it.name}
-                  <span className="text-xs text-muted-foreground"> · {it.category}</span>
-                </span>
-                <span className="font-medium">{fmtRM(Number(it.price) * Number(it.quantity))}</span>
-              </div>
-            ))}
+          <div className="flex items-center gap-2">
+            <div className="w-9 h-9 rounded-xl bg-gx-yellow flex items-center justify-center"><Wallet className="w-4 h-4 text-gx-ink" /></div>
+            <div>
+              <div className="font-semibold text-sm">Today</div>
+              <div className="text-xs text-muted-foreground">{fmtRM(todaySpend)} spent · {fmtRM(remainingDaily)} left</div>
+            </div>
           </div>
-        ) : (
-          <div className="text-sm text-muted-foreground">No non-essential spending detected this month — great job!</div>
-        )}
+          <Link to="/goals" className="text-xs text-primary inline-flex items-center gap-1 hover:underline">Manage <ArrowUpRight className="w-3 h-3" /></Link>
+        </div>
+        <div className="h-2 rounded-full bg-muted overflow-hidden">
+          <div className={`h-full transition-all ${dailyPct > 80 ? "bg-destructive" : "bg-gradient-gx"}`} style={{ width: `${dailyPct}%` }} />
+        </div>
+        <div className="flex justify-between text-xs text-muted-foreground mt-2">
+          <span>{Math.round(dailyPct)}% of daily limit</span>
+          <span>{fmtRM(dailyLimit)} limit</span>
+        </div>
       </Card>
 
+      {/* Charts: simpler, side-by-side */}
       <div className="grid lg:grid-cols-2 gap-4">
-        <Card className="p-5 bg-gradient-card shadow-elegant">
-          <h3 className="font-semibold mb-4">Spending by category</h3>
+        <Card className="p-5">
+          <h3 className="font-semibold text-sm mb-3">Top categories</h3>
           {byCat.length ? (
-            <div className="h-64"><ResponsiveContainer>
-              <PieChart>
-                <Pie data={byCat} dataKey="value" nameKey="name" innerRadius={50} outerRadius={90} paddingAngle={2}>
-                  {byCat.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
-                </Pie>
-                <Tooltip formatter={(v: any) => fmtRM(Number(v))} />
-              </PieChart>
-            </ResponsiveContainer></div>
-          ) : <Empty msg="No spending yet — scan your first receipt." />}
-          <div className="flex flex-wrap gap-2 mt-3">
-            {byCat.map((c, i) => (
-              <span key={c.name} className="inline-flex items-center gap-1.5 text-xs">
-                <span className="w-2 h-2 rounded-full" style={{ background: COLORS[i % COLORS.length] }} />{c.name}: {fmtRM(c.value)}
-              </span>
-            ))}
-          </div>
+            <>
+              <div className="h-48"><ResponsiveContainer>
+                <PieChart>
+                  <Pie data={byCat} dataKey="value" nameKey="name" innerRadius={45} outerRadius={75} paddingAngle={2}>
+                    {byCat.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
+                  </Pie>
+                  <Tooltip formatter={(v: any) => fmtRM(Number(v))} />
+                </PieChart>
+              </ResponsiveContainer></div>
+              <div className="space-y-1.5 mt-2">
+                {byCat.map((c, i) => (
+                  <div key={c.name} className="flex items-center justify-between text-xs">
+                    <span className="flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full" style={{ background: COLORS[i % COLORS.length] }} />
+                      {c.name}
+                    </span>
+                    <span className="font-medium">{fmtRM(c.value)}</span>
+                  </div>
+                ))}
+              </div>
+            </>
+          ) : <Empty msg="No spending yet" />}
         </Card>
 
-        <Card className="p-5 bg-gradient-card shadow-elegant">
-          <h3 className="font-semibold mb-4">Daily trend</h3>
+        <Card className="p-5">
+          <h3 className="font-semibold text-sm mb-3">Last 7 days</h3>
           {trend.length ? (
-            <div className="h-64"><ResponsiveContainer>
+            <div className="h-48"><ResponsiveContainer>
               <BarChart data={trend}>
                 <XAxis dataKey="day" tick={{ fontSize: 11 }} />
                 <YAxis tick={{ fontSize: 11 }} />
                 <Tooltip formatter={(v: any) => fmtRM(Number(v))} />
-                <Bar dataKey="total" fill="oklch(0.72 0.16 175)" radius={[6,6,0,0]} />
+                <Bar dataKey="total" fill="var(--gx-yellow-deep)" radius={[6,6,0,0]} />
               </BarChart>
             </ResponsiveContainer></div>
-          ) : <Empty msg="Trends appear after a few receipts." />}
+          ) : <Empty msg="Trends appear after a few receipts" />}
         </Card>
       </div>
 
-      <Card className="p-5 bg-gradient-card shadow-elegant">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="font-semibold">AI insights</h3>
-          {!insights.length && <span className="text-xs text-muted-foreground">Click "AI Insights" to generate</span>}
+      {/* Goals quick view */}
+      {goals.length > 0 && (
+        <Card className="p-5">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="font-semibold text-sm">Savings goals</h3>
+            <Link to="/goals" className="text-xs text-primary inline-flex items-center gap-1 hover:underline">View all <ArrowUpRight className="w-3 h-3" /></Link>
+          </div>
+          <div className="space-y-2">
+            {goals.slice(0, 3).map((g, i) => {
+              const pct = Number(g.target_amount) > 0 ? Math.min(100, (Number(g.current_amount) / Number(g.target_amount)) * 100) : 0;
+              return (
+                <div key={i}>
+                  <div className="flex justify-between text-xs mb-1">
+                    <span className="font-medium">{g.title}</span>
+                    <span className="text-muted-foreground">{fmtRM(g.current_amount)} / {fmtRM(g.target_amount)}</span>
+                  </div>
+                  <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+                    <div className="h-full bg-gradient-gx" style={{ width: `${pct}%` }} />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </Card>
+      )}
+
+      {/* Insights */}
+      <Card className="p-5">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="font-semibold text-sm">Smart tips</h3>
+          <Button size="sm" variant="ghost" onClick={generate} disabled={genLoading}>
+            <RefreshCw className={`w-3.5 h-3.5 ${genLoading ? "animate-spin" : ""}`} /> Refresh
+          </Button>
         </div>
-        <div className="grid md:grid-cols-2 gap-3">
-          {insights.map(i => (
-            <div key={i.id} className={`rounded-xl p-4 border ${
-              i.severity === "warning" ? "bg-warning/10 border-warning/30" :
-              i.severity === "success" ? "bg-success/10 border-success/30" :
-              "bg-muted border-border"
-            }`}>
-              <div className="font-semibold text-sm">{i.title}</div>
-              <div className="text-sm text-muted-foreground mt-1">{i.body}</div>
-            </div>
-          ))}
-        </div>
+        {insights.length ? (
+          <div className="grid sm:grid-cols-2 gap-2">
+            {insights.map(i => (
+              <div key={i.id} className={`rounded-xl p-3 text-sm border ${
+                i.severity === "warning" ? "bg-warning/10 border-warning/30" :
+                i.severity === "success" ? "bg-success/10 border-success/30" :
+                "bg-muted border-border"
+              }`}>
+                <div className="font-semibold text-xs">{i.title}</div>
+                <div className="text-xs text-muted-foreground mt-1">{i.body}</div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-xs text-muted-foreground text-center py-4">Tap refresh to get personalised tips.</div>
+        )}
       </Card>
     </div>
   );
 }
 
-function StatCard({ icon: Icon, label, value, accent }: any) {
+function MiniStat({ label, value, accent }: { label: string; value: string; accent?: boolean }) {
   return (
-    <Card className="p-4 bg-gradient-card shadow-elegant">
-      <div className="flex items-center gap-2 text-xs text-muted-foreground"><Icon className="w-3.5 h-3.5" /> {label}</div>
-      <div className={`text-2xl font-bold mt-1 ${accent ? "text-destructive" : ""}`}>{value}</div>
-    </Card>
+    <div>
+      <div className="text-[10px] text-white/60 uppercase tracking-wide">{label}</div>
+      <div className={`font-semibold mt-0.5 ${accent ? "text-gx-yellow" : "text-white"}`}>{value}</div>
+    </div>
   );
 }
 function Empty({ msg }: { msg: string }) {
-  return <div className="h-64 flex items-center justify-center text-sm text-muted-foreground">{msg}</div>;
+  return <div className="h-48 flex items-center justify-center text-sm text-muted-foreground">{msg}</div>;
 }
