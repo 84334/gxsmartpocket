@@ -16,6 +16,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthUploadRouteImport } from './routes/_auth/upload'
 import { Route as AuthReviewRouteImport } from './routes/_auth/review'
 import { Route as AuthReceiptsRouteImport } from './routes/_auth/receipts'
+import { Route as AuthOnboardingRouteImport } from './routes/_auth/onboarding'
 import { Route as AuthGoalsRouteImport } from './routes/_auth/goals'
 import { Route as AuthExpensesRouteImport } from './routes/_auth/expenses'
 import { Route as AuthDashboardRouteImport } from './routes/_auth/dashboard'
@@ -54,6 +55,11 @@ const AuthReceiptsRoute = AuthReceiptsRouteImport.update({
   path: '/receipts',
   getParentRoute: () => AuthRoute,
 } as any)
+const AuthOnboardingRoute = AuthOnboardingRouteImport.update({
+  id: '/onboarding',
+  path: '/onboarding',
+  getParentRoute: () => AuthRoute,
+} as any)
 const AuthGoalsRoute = AuthGoalsRouteImport.update({
   id: '/goals',
   path: '/goals',
@@ -77,6 +83,7 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof AuthDashboardRoute
   '/expenses': typeof AuthExpensesRoute
   '/goals': typeof AuthGoalsRoute
+  '/onboarding': typeof AuthOnboardingRoute
   '/receipts': typeof AuthReceiptsRoute
   '/review': typeof AuthReviewRoute
   '/upload': typeof AuthUploadRoute
@@ -88,6 +95,7 @@ export interface FileRoutesByTo {
   '/dashboard': typeof AuthDashboardRoute
   '/expenses': typeof AuthExpensesRoute
   '/goals': typeof AuthGoalsRoute
+  '/onboarding': typeof AuthOnboardingRoute
   '/receipts': typeof AuthReceiptsRoute
   '/review': typeof AuthReviewRoute
   '/upload': typeof AuthUploadRoute
@@ -101,6 +109,7 @@ export interface FileRoutesById {
   '/_auth/dashboard': typeof AuthDashboardRoute
   '/_auth/expenses': typeof AuthExpensesRoute
   '/_auth/goals': typeof AuthGoalsRoute
+  '/_auth/onboarding': typeof AuthOnboardingRoute
   '/_auth/receipts': typeof AuthReceiptsRoute
   '/_auth/review': typeof AuthReviewRoute
   '/_auth/upload': typeof AuthUploadRoute
@@ -114,6 +123,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/expenses'
     | '/goals'
+    | '/onboarding'
     | '/receipts'
     | '/review'
     | '/upload'
@@ -125,6 +135,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/expenses'
     | '/goals'
+    | '/onboarding'
     | '/receipts'
     | '/review'
     | '/upload'
@@ -137,6 +148,7 @@ export interface FileRouteTypes {
     | '/_auth/dashboard'
     | '/_auth/expenses'
     | '/_auth/goals'
+    | '/_auth/onboarding'
     | '/_auth/receipts'
     | '/_auth/review'
     | '/_auth/upload'
@@ -200,6 +212,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthReceiptsRouteImport
       parentRoute: typeof AuthRoute
     }
+    '/_auth/onboarding': {
+      id: '/_auth/onboarding'
+      path: '/onboarding'
+      fullPath: '/onboarding'
+      preLoaderRoute: typeof AuthOnboardingRouteImport
+      parentRoute: typeof AuthRoute
+    }
     '/_auth/goals': {
       id: '/_auth/goals'
       path: '/goals'
@@ -228,6 +247,7 @@ interface AuthRouteChildren {
   AuthDashboardRoute: typeof AuthDashboardRoute
   AuthExpensesRoute: typeof AuthExpensesRoute
   AuthGoalsRoute: typeof AuthGoalsRoute
+  AuthOnboardingRoute: typeof AuthOnboardingRoute
   AuthReceiptsRoute: typeof AuthReceiptsRoute
   AuthReviewRoute: typeof AuthReviewRoute
   AuthUploadRoute: typeof AuthUploadRoute
@@ -237,6 +257,7 @@ const AuthRouteChildren: AuthRouteChildren = {
   AuthDashboardRoute: AuthDashboardRoute,
   AuthExpensesRoute: AuthExpensesRoute,
   AuthGoalsRoute: AuthGoalsRoute,
+  AuthOnboardingRoute: AuthOnboardingRoute,
   AuthReceiptsRoute: AuthReceiptsRoute,
   AuthReviewRoute: AuthReviewRoute,
   AuthUploadRoute: AuthUploadRoute,
