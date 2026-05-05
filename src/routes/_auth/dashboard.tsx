@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { fmtRM, startOfMonth } from "@/lib/format";
+import { fmtRM, startOfMonth, startOfToday } from "@/lib/format";
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip } from "recharts";
 import { Sparkles, Upload, AlertCircle, TrendingUp, Wallet, RefreshCw, PiggyBank } from "lucide-react";
 import { toast } from "sonner";
@@ -18,23 +18,29 @@ function Dashboard() {
   const [fixed, setFixed] = useState<any[]>([]);
   const [insights, setInsights] = useState<any[]>([]);
   const [goals, setGoals] = useState<any[]>([]);
+  const [dailyLimit, setDailyLimit] = useState(0);
+  const [todaySpend, setTodaySpend] = useState(0);
   const [score, setScore] = useState<{score: number; label: string} | null>(null);
   const [genLoading, setGenLoading] = useState(false);
 
   const load = async () => {
     const since = startOfMonth();
-    const [{ data: it }, { data: pr }, { data: fx }, { data: ins }, { data: gl }] = await Promise.all([
+    const today = startOfToday();
+    const [{ data: it }, { data: pr }, { data: fx }, { data: ins }, { data: gl }, { data: tdy }] = await Promise.all([
       supabase.from("receipt_items").select("*").gte("created_at", since),
-      supabase.from("profiles").select("monthly_income").maybeSingle(),
+      supabase.from("profiles").select("monthly_income, daily_spending_limit").maybeSingle(),
       supabase.from("fixed_expenses").select("*"),
       supabase.from("insights").select("*").order("created_at", { ascending: false }),
-      supabase.from("savings_goals").select("current_amount,target_amount,title"),
+      supabase.from("savings_goals").select("current_amount,target_amount,title,daily_save_amount"),
+      supabase.from("receipt_items").select("price,quantity").gte("created_at", today),
     ]);
     setItems(it ?? []);
     setIncome(Number(pr?.monthly_income ?? 0));
+    setDailyLimit(Number(pr?.daily_spending_limit ?? 0));
     setFixed(fx ?? []);
     setInsights(ins ?? []);
     setGoals(gl ?? []);
+    setTodaySpend((tdy ?? []).reduce((s: number, i: any) => s + Number(i.price) * Number(i.quantity), 0));
   };
   useEffect(() => { load(); }, []);
 
@@ -44,6 +50,9 @@ function Dashboard() {
   const remaining = income - fixedTotal - totalSpend;
   const totalSavings = goals.reduce((s, g) => s + Number(g.current_amount || 0), 0);
   const totalTarget = goals.reduce((s, g) => s + Number(g.target_amount || 0), 0);
+  const plannedDaily = goals.reduce((s, g) => s + Number(g.daily_save_amount || 0), 0);
+  const remainingDaily = Math.max(0, dailyLimit - todaySpend);
+  const availableSpend = Math.max(0, remainingDaily - plannedDaily);
 
   const byCat = Object.entries(items.reduce<Record<string, number>>((acc, i) => {
     const k = i.category; acc[k] = (acc[k] ?? 0) + Number(i.price) * Number(i.quantity); return acc;
@@ -90,6 +99,19 @@ function Dashboard() {
         <StatCard icon={PiggyBank} label="Total savings" value={fmtRM(totalSavings)} />
         <StatCard icon={AlertCircle} label="Non-essential" value={fmtRM(wasteful)} />
       </div>
+
+      <Card className="p-5 bg-gradient-card shadow-elegant">
+        <div className="flex items-center justify-between flex-wrap gap-2 mb-3">
+          <h3 className="font-semibold flex items-center gap-2"><Wallet className="w-4 h-4 text-primary" /> Today's budget</h3>
+          <Link to="/goals" className="text-xs text-primary underline">Manage</Link>
+        </div>
+        <div className="grid sm:grid-cols-4 gap-3 text-sm">
+          <div className="rounded-lg bg-muted/40 px-3 py-2"><div className="text-[11px] text-muted-foreground">Daily limit</div><div className="font-semibold">{fmtRM(dailyLimit)}</div></div>
+          <div className="rounded-lg bg-muted/40 px-3 py-2"><div className="text-[11px] text-muted-foreground">Spent today</div><div className="font-semibold">{fmtRM(todaySpend)}</div></div>
+          <div className="rounded-lg bg-muted/40 px-3 py-2"><div className="text-[11px] text-muted-foreground">Planned savings</div><div className="font-semibold text-primary">{fmtRM(plannedDaily)}</div></div>
+          <div className="rounded-lg bg-muted/40 px-3 py-2"><div className="text-[11px] text-muted-foreground">Available to spend</div><div className="font-semibold">{fmtRM(availableSpend)}</div></div>
+        </div>
+      </Card>
 
       <Card className="p-5 bg-gradient-card shadow-elegant">
         <div className="flex items-center justify-between flex-wrap gap-2 mb-3">
