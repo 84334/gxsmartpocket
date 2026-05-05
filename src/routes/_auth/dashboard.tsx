@@ -222,7 +222,7 @@ function MiniStat({ label, value, accent }: { label: string; value: string; acce
   return (
     <div>
       <div className="text-[10px] text-white/60 uppercase tracking-wide">{label}</div>
-      <div className={`font-semibold mt-0.5 ${accent ? "text-gx-yellow" : "text-white"}`}>{value}</div>
+      <div className={`font-semibold mt-0.5 ${accent ? "text-white" : "text-white/90"}`}>{value}</div>
     </div>
   );
 }
