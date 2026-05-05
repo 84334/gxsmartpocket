@@ -74,6 +74,9 @@ export type Database = {
           display_name: string | null
           id: string
           monthly_income: number | null
+          non_negotiables: string[] | null
+          onboarded_at: string | null
+          primary_transport: string | null
           updated_at: string
         }
         Insert: {
@@ -81,6 +84,9 @@ export type Database = {
           display_name?: string | null
           id: string
           monthly_income?: number | null
+          non_negotiables?: string[] | null
+          onboarded_at?: string | null
+          primary_transport?: string | null
           updated_at?: string
         }
         Update: {
@@ -88,6 +94,9 @@ export type Database = {
           display_name?: string | null
           id?: string
           monthly_income?: number | null
+          non_negotiables?: string[] | null
+          onboarded_at?: string | null
+          primary_transport?: string | null
           updated_at?: string
         }
         Relationships: []
