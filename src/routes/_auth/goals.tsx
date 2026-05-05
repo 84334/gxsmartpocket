@@ -27,6 +27,7 @@ function Goals() {
   const [date, setDate] = useState("");
   const [openNew, setOpenNew] = useState(false);
   const [dailyLimit, setDailyLimit] = useState<number>(20);
+  const [limitDraft, setLimitDraft] = useState<string>("20");
   const [todaySpend, setTodaySpend] = useState<number>(0);
   const [streak, setStreak] = useState<number>(0);
   const [longestStreak, setLongestStreak] = useState<number>(0);
@@ -46,6 +47,7 @@ function Goals() {
     ]);
     setList(gs ?? []);
     setDailyLimit(Number(pr?.daily_spending_limit ?? 20));
+    setLimitDraft(String(Number(pr?.daily_spending_limit ?? 20)));
     let curStreak = Number(pr?.streak_days ?? 0);
     const lastDate = (pr as any)?.last_streak_date ?? null;
     const today = todayDate();
@@ -121,6 +123,17 @@ function Goals() {
 
   const remove = async (id: string) => { await supabase.from("savings_goals").delete().eq("id", id); load(); };
 
+  const saveDailyLimit = async () => {
+    const v = Number(limitDraft);
+    if (!v || v <= 0) return toast.error("Enter a valid amount");
+    const { data: u } = await supabase.auth.getUser();
+    if (!u.user) return;
+    const { error } = await supabase.from("profiles").update({ daily_spending_limit: v }).eq("id", u.user.id);
+    if (error) return toast.error(error.message);
+    setDailyLimit(v);
+    toast.success(`Daily spend limit set to ${fmtRM(v)}`);
+  };
+
   const bumpStreakOnSave = async () => {
     const { data: u } = await supabase.auth.getUser();
     if (!u.user) return;
@@ -192,6 +205,28 @@ function Goals() {
             </div>
           </div>
         )}
+      </Card>
+
+      {/* Daily spending limit */}
+      <Card className="p-5 rounded-2xl border-border/60 shadow-soft">
+        <div className="flex items-start justify-between gap-4 flex-wrap">
+          <div className="min-w-0">
+            <h3 className="font-semibold">Daily spending limit</h3>
+            <p className="text-xs text-muted-foreground mt-1">
+              Auto-save kicks in only when you stay under this. Today: <span className="text-foreground font-medium">{fmtRM(todaySpend)}</span> of {fmtRM(dailyLimit)}
+            </p>
+            <Progress value={Math.min(100, (todaySpend / Math.max(1, dailyLimit)) * 100)} className="mt-3 w-64 max-w-full" />
+          </div>
+          <div className="flex items-end gap-2">
+            <div>
+              <Label className="text-[10px] text-muted-foreground">Limit (RM/day)</Label>
+              <Input type="number" className="h-9 w-32" value={limitDraft} onChange={e => setLimitDraft(e.target.value)} />
+            </div>
+            <Button size="sm" onClick={saveDailyLimit} className="h-9 bg-primary text-primary-foreground hover:opacity-90 rounded-full px-4">
+              Save
+            </Button>
+          </div>
+        </div>
       </Card>
 
       {/* Goals list */}
