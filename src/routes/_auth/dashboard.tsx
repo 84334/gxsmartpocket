@@ -3,10 +3,6 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { fmtRM, startOfMonth } from "@/lib/format";
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip } from "recharts";
 import { Sparkles, Upload, AlertCircle, TrendingUp, Wallet, RefreshCw, PiggyBank } from "lucide-react";
@@ -24,9 +20,6 @@ function Dashboard() {
   const [goals, setGoals] = useState<any[]>([]);
   const [score, setScore] = useState<{score: number; label: string} | null>(null);
   const [genLoading, setGenLoading] = useState(false);
-  const [saveOpen, setSaveOpen] = useState(false);
-  const [saveGoalId, setSaveGoalId] = useState<string>("");
-  const [saveAmount, setSaveAmount] = useState<string>("");
 
   const load = async () => {
     const since = startOfMonth();
@@ -45,26 +38,12 @@ function Dashboard() {
   };
   useEffect(() => { load(); }, []);
 
-  const quickSave = async () => {
-    const amt = Number(saveAmount);
-    if (!saveGoalId || !amt || amt <= 0) return toast.error("Pick a goal and enter an amount");
-    const goal = goals.find((g: any) => g.id === saveGoalId);
-    if (!goal) return;
-    const next = Number(goal.current_amount || 0) + amt;
-    const { error } = await supabase.from("savings_goals").update({ current_amount: next }).eq("id", saveGoalId);
-    if (error) return toast.error(error.message);
-    toast.success(`Saved ${fmtRM(amt)} to ${goal.title}`);
-    setSaveOpen(false); setSaveAmount(""); setSaveGoalId("");
-    load();
-  };
-
   const totalSpend = items.reduce((s, i) => s + Number(i.price) * Number(i.quantity), 0);
   const fixedTotal = fixed.reduce((s, i) => s + Number(i.amount), 0);
   const wasteful = items.filter(i => !i.is_essential).reduce((s, i) => s + Number(i.price) * Number(i.quantity), 0);
   const remaining = income - fixedTotal - totalSpend;
   const totalSavings = goals.reduce((s, g) => s + Number(g.current_amount || 0), 0);
   const totalTarget = goals.reduce((s, g) => s + Number(g.target_amount || 0), 0);
-  const savedThisMonth = Math.max(0, income - fixedTotal - totalSpend);
 
   const byCat = Object.entries(items.reduce<Record<string, number>>((acc, i) => {
     const k = i.category; acc[k] = (acc[k] ?? 0) + Number(i.price) * Number(i.quantity); return acc;
@@ -101,18 +80,14 @@ function Dashboard() {
           <Button variant="outline" onClick={generate} disabled={genLoading}>
             <RefreshCw className={genLoading ? "animate-spin" : ""} /> AI Insights
           </Button>
-          <Button variant="outline" onClick={() => setSaveOpen(true)} disabled={!goals.length}>
-            <PiggyBank /> Quick save
-          </Button>
           <Link to="/upload"><Button variant="hero"><Upload /> Scan receipt</Button></Link>
         </div>
       </div>
 
-      <div className="grid sm:grid-cols-2 lg:grid-cols-5 gap-4">
+      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard icon={Wallet} label="Total spent" value={fmtRM(totalSpend)} />
-        <StatCard icon={TrendingUp} label="Money left this month" value={fmtRM(remaining)} accent={remaining < 0} />
-        <StatCard icon={PiggyBank} label="Saved this month" value={fmtRM(savedThisMonth)} />
-        <StatCard icon={PiggyBank} label="Total in savings goals" value={fmtRM(totalSavings)} />
+        <StatCard icon={TrendingUp} label="Money left" value={fmtRM(remaining)} accent={remaining < 0} />
+        <StatCard icon={PiggyBank} label="Total savings" value={fmtRM(totalSavings)} />
         <StatCard icon={AlertCircle} label="Non-essential" value={fmtRM(wasteful)} />
       </div>
 
@@ -214,39 +189,6 @@ function Dashboard() {
           ))}
         </div>
       </Card>
-
-      <Dialog open={saveOpen} onOpenChange={setSaveOpen}>
-        <DialogContent>
-          <DialogHeader><DialogTitle>Quick save to a goal</DialogTitle></DialogHeader>
-          <div className="space-y-3">
-            <div>
-              <Label className="text-xs">Goal</Label>
-              <Select value={saveGoalId} onValueChange={setSaveGoalId}>
-                <SelectTrigger><SelectValue placeholder="Choose a savings goal" /></SelectTrigger>
-                <SelectContent>
-                  {goals.map((g: any) => (
-                    <SelectItem key={g.id} value={g.id}>{g.title} — {fmtRM(g.current_amount)} / {fmtRM(g.target_amount)}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label className="text-xs">Amount (RM)</Label>
-              <Input type="number" inputMode="decimal" value={saveAmount} onChange={e => setSaveAmount(e.target.value)} placeholder="50" />
-            </div>
-            {remaining > 0 && (
-              <div className="text-xs text-muted-foreground">
-                You have {fmtRM(remaining)} left this month.
-                <button type="button" className="ml-2 underline" onClick={() => setSaveAmount(String(Math.floor(remaining)))}>Save it all</button>
-              </div>
-            )}
-          </div>
-          <DialogFooter>
-            <Button variant="ghost" onClick={() => setSaveOpen(false)}>Cancel</Button>
-            <Button variant="hero" onClick={quickSave}>Save</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

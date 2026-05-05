@@ -70,9 +70,6 @@ export type Database = {
       }
       profiles: {
         Row: {
-          allocation_allowance_pct: number
-          allocation_backup_pct: number
-          allocation_savings_pct: number
           created_at: string
           display_name: string | null
           id: string
@@ -83,9 +80,6 @@ export type Database = {
           updated_at: string
         }
         Insert: {
-          allocation_allowance_pct?: number
-          allocation_backup_pct?: number
-          allocation_savings_pct?: number
           created_at?: string
           display_name?: string | null
           id: string
@@ -96,9 +90,6 @@ export type Database = {
           updated_at?: string
         }
         Update: {
-          allocation_allowance_pct?: number
-          allocation_backup_pct?: number
-          allocation_savings_pct?: number
           created_at?: string
           display_name?: string | null
           id?: string
