@@ -210,10 +210,12 @@ export type Database = {
       }
       savings_goals: {
         Row: {
+          completed_at: string | null
           created_at: string
           current_amount: number
           daily_save_amount: number
           id: string
+          in_wallet: boolean
           last_saved_on: string | null
           target_amount: number
           target_date: string | null
@@ -221,10 +223,12 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          completed_at?: string | null
           created_at?: string
           current_amount?: number
           daily_save_amount?: number
           id?: string
+          in_wallet?: boolean
           last_saved_on?: string | null
           target_amount?: number
           target_date?: string | null
@@ -232,10 +236,12 @@ export type Database = {
           user_id: string
         }
         Update: {
+          completed_at?: string | null
           created_at?: string
           current_amount?: number
           daily_save_amount?: number
           id?: string
+          in_wallet?: boolean
           last_saved_on?: string | null
           target_amount?: number
           target_date?: string | null
