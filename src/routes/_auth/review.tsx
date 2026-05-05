@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { fmtRM } from "@/lib/format";
 import { Trash2, Plus, Save, Users } from "lucide-react";
 import { toast } from "sonner";
+import { applyRulebook, rulebookReason, type Rulebook } from "@/lib/rulebook";
 
 export const Route = createFileRoute("/_auth/review")({ component: ReviewPage });
 
@@ -32,8 +33,19 @@ function ReviewPage() {
   const [previewUrl, setPreviewUrl] = useState<string>("");
   const [items, setItems] = useState<Item[]>([]);
   const [busy, setBusy] = useState(false);
+  const [rulebook, setRulebook] = useState<Rulebook>({});
 
   useEffect(() => {
+    (async () => {
+      const { data } = await supabase
+        .from("profiles")
+        .select("primary_transport, non_negotiables")
+        .maybeSingle();
+      setRulebook({
+        primaryTransport: data?.primary_transport ?? null,
+        nonNegotiables: (data?.non_negotiables as string[] | null) ?? [],
+      });
+    })();
     const raw = sessionStorage.getItem("pending_receipt");
     if (!raw) {
       toast.error("No receipt to review");
@@ -54,6 +66,16 @@ function ReviewPage() {
       split_count: 1,
     })));
   }, [navigate]);
+
+  // Re-apply the rulebook whenever items or rulebook change.
+  useEffect(() => {
+    if (!rulebook.primaryTransport && !rulebook.nonNegotiables?.length) return;
+    setItems(prev => prev.map(it => {
+      const corrected = applyRulebook(it, rulebook);
+      return corrected === it.is_essential ? it : { ...it, is_essential: corrected };
+    }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rulebook.primaryTransport, JSON.stringify(rulebook.nonNegotiables)]);
 
   const update = (i: number, patch: Partial<Item>) =>
     setItems(prev => prev.map((it, idx) => idx === i ? { ...it, ...patch } : it));
@@ -175,6 +197,12 @@ function ReviewPage() {
                   <Switch checked={it.is_essential} onCheckedChange={v => update(i, { is_essential: v })} />
                   <span>{it.is_essential ? "Essential" : "Non-essential"}</span>
                 </label>
+                {(() => {
+                  const reason = rulebookReason(it, rulebook, it.is_essential);
+                  return reason ? (
+                    <span className="text-xs text-accent">· {reason}</span>
+                  ) : null;
+                })()}
                 <div className="flex items-center gap-2">
                   <Users className="w-4 h-4 text-muted-foreground" />
                   <span className="text-muted-foreground text-xs">Split between</span>
