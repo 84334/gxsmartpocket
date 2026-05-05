@@ -157,20 +157,22 @@ function Goals() {
 
   const keepInTotalSaved = async () => {
     if (!celebrateGoal) return;
-    // Mark as decided; funds remain counted in Total Saved (locked away from available balance).
-    await supabase.from("savings_goals").update({ in_wallet: true }).eq("id", celebrateGoal.id);
+    const { error } = await supabase.from("savings_goals").update({ in_wallet: false }).eq("id", celebrateGoal.id);
+    if (error) return toast.error(error.message);
     toast.success(`${fmtRM(celebrateGoal.current_amount)} kept in Total Saved`);
     setCelebrateGoal(null);
+    window.dispatchEvent(new Event("smartreceipt:balance-updated"));
     await load();
   };
 
   const releaseToBalance = async () => {
     if (!celebrateGoal) return;
-    // Returns the saved funds to the user's available balance by zeroing this goal out.
     const amt = Number(celebrateGoal.current_amount || 0);
-    await supabase.from("savings_goals").update({ current_amount: 0, in_wallet: true }).eq("id", celebrateGoal.id);
+    const { error } = await supabase.from("savings_goals").update({ current_amount: 0, in_wallet: true }).eq("id", celebrateGoal.id);
+    if (error) return toast.error(error.message);
     toast.success(`${fmtRM(amt)} returned to your available balance`);
     setCelebrateGoal(null);
+    window.dispatchEvent(new Event("smartreceipt:balance-updated"));
     await load();
   };
 
