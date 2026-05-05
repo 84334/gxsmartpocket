@@ -307,14 +307,19 @@ function Goals() {
             const pct = Math.min(100, Math.round((Number(g.current_amount) / Number(g.target_amount || 1)) * 100));
             const remaining = Math.max(0, Number(g.target_amount) - Number(g.current_amount));
             const savedT = g.last_saved_on === todayDate();
+            const completed = !!g.completed_at;
             return (
-              <Card key={g.id} className="p-5 rounded-2xl border-border/60 shadow-soft hover:shadow-elegant transition-shadow">
+              <Card key={g.id} className={`p-5 rounded-2xl border-border/60 shadow-soft hover:shadow-elegant transition-shadow ${completed ? "bg-gradient-to-br from-primary/10 to-accent/10 border-primary/30" : ""}`}>
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
                     <div className="font-semibold truncate">{g.title}</div>
                     <div className="text-xs text-muted-foreground mt-0.5">{fmtRM(g.current_amount)} of {fmtRM(g.target_amount)}</div>
                   </div>
-                  {savedT && (
+                  {completed ? (
+                    <span className="flex items-center gap-1 text-[10px] font-medium text-primary bg-primary/15 px-2 py-1 rounded-full shrink-0">
+                      🎉 {g.in_wallet ? "In Wallet" : "Completed"}
+                    </span>
+                  ) : savedT && (
                     <span className="flex items-center gap-1 text-[10px] font-medium text-primary bg-primary/10 px-2 py-1 rounded-full shrink-0">
                       <Check className="w-3 h-3" /> Today
                     </span>
@@ -325,6 +330,14 @@ function Goals() {
                   <span>{pct}% complete</span>
                   <span>{fmtRM(remaining)} to go</span>
                 </div>
+                {completed ? (
+                  <div className="mt-3 flex items-center gap-2">
+                    <Button size="sm" variant="outline" className="h-8" onClick={() => setCelebrateGoal(g)}>
+                      Choose what's next
+                    </Button>
+                    <Button size="icon" variant="ghost" className="h-8 w-8 ml-auto" onClick={() => remove(g.id)}><Trash2 className="w-4 h-4" /></Button>
+                  </div>
+                ) : (
                 <div className="mt-3 flex items-end gap-2">
                   <div className="flex-1">
                     <Label className="text-[10px] text-muted-foreground">Auto-save / day</Label>
@@ -368,6 +381,7 @@ function Goals() {
                   </Button>
                   <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => remove(g.id)}><Trash2 className="w-4 h-4" /></Button>
                 </div>
+                )}
               </Card>
             );
           })}
