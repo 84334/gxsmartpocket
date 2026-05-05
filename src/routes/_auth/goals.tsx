@@ -296,14 +296,35 @@ function Goals() {
                       onBlur={e => { const v = Number(e.target.value); if (v !== Number(g.daily_save_amount)) updateDaily(g.id, v); }} />
                   </div>
                   <div className="flex-1">
-                    <Label className="text-[10px] text-muted-foreground">Add now (RM)</Label>
-                    <Input type="number" className="h-8" placeholder="↵" onKeyDown={e => {
-                      if (e.key === "Enter") {
-                        const v = Number((e.target as HTMLInputElement).value);
-                        if (v > 0) updateCurrent(g.id, Number(g.current_amount) + v);
-                        (e.target as HTMLInputElement).value = "";
-                      }
-                    }} />
+                    <Label className="text-[10px] text-muted-foreground">Save Extra (RM)</Label>
+                    <div className="flex gap-1">
+                      <Input
+                        id={`save-${g.id}`}
+                        type="number"
+                        className="h-8"
+                        placeholder="0.00"
+                        onKeyDown={e => {
+                          if (e.key === "Enter") {
+                            const v = Number((e.target as HTMLInputElement).value);
+                            if (v > 0) updateCurrent(g.id, Number(g.current_amount) + v);
+                            (e.target as HTMLInputElement).value = "";
+                          }
+                        }}
+                      />
+                      <Button
+                        size="sm"
+                        className="h-8 bg-primary text-primary-foreground hover:opacity-90 rounded-md px-3"
+                        onClick={() => {
+                          const el = document.getElementById(`save-${g.id}`) as HTMLInputElement | null;
+                          const v = Number(el?.value || 0);
+                          if (!v || v <= 0) return toast.error("Enter an amount");
+                          updateCurrent(g.id, Number(g.current_amount) + v);
+                          if (el) el.value = "";
+                        }}
+                      >
+                        Save
+                      </Button>
+                    </div>
                   </div>
                   <Button size="sm" variant="outline" className="h-8" onClick={() => startWithdraw(g.id)} disabled={Number(g.current_amount) <= 0}>
                     Withdraw
