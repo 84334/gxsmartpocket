@@ -41,41 +41,36 @@ function ReviewPage() {
         .from("profiles")
         .select("primary_transport, non_negotiables")
         .maybeSingle();
-      setRulebook({
+      const rb: Rulebook = {
         primaryTransport: data?.primary_transport ?? null,
         nonNegotiables: (data?.non_negotiables as string[] | null) ?? [],
-      });
-    })();
-    const raw = sessionStorage.getItem("pending_receipt");
-    if (!raw) {
-      toast.error("No receipt to review");
-      navigate({ to: "/upload" });
-      return;
-    }
-    const { parsed, imageUrl, previewUrl } = JSON.parse(raw);
-    setMerchant(parsed.merchant ?? "");
-    setPurchasedAt((parsed.purchased_at ?? new Date().toISOString()).slice(0, 16));
-    setImageUrl(imageUrl);
-    setPreviewUrl(previewUrl ?? "");
-    setItems((parsed.items ?? []).map((it: any) => ({
-      name: it.name ?? "",
-      price: Number(it.price) || 0,
-      quantity: Number(it.quantity) || 1,
-      category: it.category ?? "Others",
-      is_essential: it.is_essential ?? true,
-      split_count: 1,
-    })));
-  }, [navigate]);
+      };
+      setRulebook(rb);
 
-  // Re-apply the rulebook whenever items or rulebook change.
-  useEffect(() => {
-    if (!rulebook.primaryTransport && !rulebook.nonNegotiables?.length) return;
-    setItems(prev => prev.map(it => {
-      const corrected = applyRulebook(it, rulebook);
-      return corrected === it.is_essential ? it : { ...it, is_essential: corrected };
-    }));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [rulebook.primaryTransport, JSON.stringify(rulebook.nonNegotiables)]);
+      const raw = sessionStorage.getItem("pending_receipt");
+      if (!raw) {
+        toast.error("No receipt to review");
+        navigate({ to: "/upload" });
+        return;
+      }
+      const { parsed, imageUrl, previewUrl } = JSON.parse(raw);
+      setMerchant(parsed.merchant ?? "");
+      setPurchasedAt((parsed.purchased_at ?? new Date().toISOString()).slice(0, 16));
+      setImageUrl(imageUrl);
+      setPreviewUrl(previewUrl ?? "");
+      setItems((parsed.items ?? []).map((it: any) => {
+        const base = {
+          name: it.name ?? "",
+          price: Number(it.price) || 0,
+          quantity: Number(it.quantity) || 1,
+          category: it.category ?? "Others",
+          is_essential: it.is_essential ?? true,
+          split_count: 1,
+        };
+        return { ...base, is_essential: applyRulebook(base, rb) };
+      }));
+    })();
+  }, [navigate]);
 
   const update = (i: number, patch: Partial<Item>) =>
     setItems(prev => prev.map((it, idx) => idx === i ? { ...it, ...patch } : it));
