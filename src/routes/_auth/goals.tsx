@@ -78,8 +78,12 @@ function Goals() {
       }).eq("id", g.id);
       savedTotal += apply;
     }
-    if (savedTotal > 0) toast.success(`Saved ${fmtRM(savedTotal)} toward your goals today`);
-    else toast(`No room to save today — daily limit already used`);
+    if (savedTotal > 0) {
+      toast.success(`Saved ${fmtRM(savedTotal)} toward your goals today`);
+      await bumpStreakOnSave();
+    } else {
+      toast(`No room to save today — daily limit already used`);
+    }
     load();
   };
 
@@ -95,7 +99,11 @@ function Goals() {
   };
 
   const updateCurrent = async (id: string, v: number) => {
+    const prev = list.find(g => g.id === id);
     await supabase.from("savings_goals").update({ current_amount: v }).eq("id", id);
+    if (prev && v > Number(prev.current_amount)) {
+      await bumpStreakOnSave();
+    }
     load();
   };
 
@@ -113,6 +121,22 @@ function Goals() {
   };
 
   const remove = async (id: string) => { await supabase.from("savings_goals").delete().eq("id", id); load(); };
+
+  const bumpStreakOnSave = async () => {
+    const { data: u } = await supabase.auth.getUser();
+    if (!u.user) return;
+    const today = todayDate();
+    if (lastStreakDate === today) return;
+    const yest = new Date(); yest.setDate(yest.getDate() - 1);
+    const yStr = yest.toISOString().slice(0, 10);
+    const newStreak = lastStreakDate === yStr ? streak + 1 : 1;
+    const newLongest = Math.max(longestStreak, newStreak);
+    await supabase.from("profiles").update({
+      streak_days: newStreak, longest_streak: newLongest, last_streak_date: today,
+    }).eq("id", u.user.id);
+    setStreak(newStreak); setLongestStreak(newLongest); setLastStreakDate(today);
+    toast.success(`🌱 Day ${newStreak} streak — your tree grew!`);
+  };
 
   const checkInStreak = async () => {
     const { data: u } = await supabase.auth.getUser();
@@ -319,7 +343,7 @@ function Goals() {
             </div>
             <Progress value={Math.min(100, (streak / Math.max(1, streakGoal)) * 100)} />
             <p className="text-xs text-muted-foreground">
-              Check in each day you stay within your daily limit. Miss a day and the tree gently regresses.
+              Every time you save toward a goal, your streak grows and the tree evolves. Miss a day and it gently regresses.
             </p>
             <div className="flex gap-2">
               <Button variant="hero" onClick={checkInStreak} disabled={lastStreakDate === todayDate()}>
