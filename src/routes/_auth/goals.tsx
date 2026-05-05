@@ -35,6 +35,7 @@ function Goals() {
   const [withdrawId, setWithdrawId] = useState<string | null>(null);
   const [withdrawAmt, setWithdrawAmt] = useState("");
   const [cooldown, setCooldown] = useState(0);
+  const [celebrateGoal, setCelebrateGoal] = useState<any | null>(null);
   const cdRef = useRef<number | null>(null);
   const autoRan = useRef(false);
 
@@ -77,7 +78,12 @@ function Goals() {
 
   const autoSaveToday = async (goals: any[], limit: number, spend: number) => {
     const today = todayDate();
-    const pending = goals.filter(g => Number(g.daily_save_amount) > 0 && g.last_saved_on !== today);
+    const pending = goals.filter(g =>
+      Number(g.daily_save_amount) > 0 &&
+      g.last_saved_on !== today &&
+      !g.completed_at &&
+      Number(g.current_amount) < Number(g.target_amount)
+    );
     if (!pending.length) return;
     let remaining = Math.max(0, limit - spend);
     let savedTotal = 0;
@@ -111,13 +117,27 @@ function Goals() {
 
   const updateCurrent = async (id: string, v: number) => {
     const prev = list.find(g => g.id === id);
-    await supabase.from("savings_goals").update({ current_amount: v }).eq("id", id);
-    if (prev && v > Number(prev.current_amount)) await bumpStreakOnSave();
+    if (!prev) return;
+    const target = Number(prev.target_amount);
+    const justCompleted = !prev.completed_at && v >= target && target > 0;
+    const patch: any = { current_amount: v };
+    if (justCompleted) {
+      patch.completed_at = new Date().toISOString();
+      patch.daily_save_amount = 0;
+    }
+    await supabase.from("savings_goals").update(patch).eq("id", id);
+    if (v > Number(prev.current_amount)) await bumpStreakOnSave();
+    if (justCompleted) setCelebrateGoal({ ...prev, ...patch });
     load();
   };
 
   const updateDaily = async (id: string, v: number) => {
     const newVal = Math.max(0, v);
+    const goal = list.find(g => g.id === id);
+    if (goal?.completed_at) {
+      toast.error("This goal is completed — auto-save is off.");
+      return;
+    }
     const othersTotal = list
       .filter(g => g.id !== id)
       .reduce((s, g) => s + Number(g.daily_save_amount || 0), 0);
@@ -134,6 +154,22 @@ function Goals() {
   };
 
   const remove = async (id: string) => { await supabase.from("savings_goals").delete().eq("id", id); load(); };
+
+  const moveToWallet = async () => {
+    if (!celebrateGoal) return;
+    await supabase.from("savings_goals").update({ in_wallet: true }).eq("id", celebrateGoal.id);
+    toast.success("🔒 Locked in your Goal Wallet");
+    setCelebrateGoal(null); load();
+  };
+
+  const releaseToBalance = async () => {
+    if (!celebrateGoal) return;
+    // Releasing returns the saved funds to the user's available balance
+    // by zeroing this goal out (it stays as a completed record).
+    await supabase.from("savings_goals").update({ current_amount: 0, in_wallet: false }).eq("id", celebrateGoal.id);
+    toast.success(`${fmtRM(celebrateGoal.current_amount)} returned to your available balance`);
+    setCelebrateGoal(null); load();
+  };
 
   const saveDailyLimit = async () => {
     const v = Number(limitDraft);
@@ -271,14 +307,19 @@ function Goals() {
             const pct = Math.min(100, Math.round((Number(g.current_amount) / Number(g.target_amount || 1)) * 100));
             const remaining = Math.max(0, Number(g.target_amount) - Number(g.current_amount));
             const savedT = g.last_saved_on === todayDate();
+            const completed = !!g.completed_at;
             return (
-              <Card key={g.id} className="p-5 rounded-2xl border-border/60 shadow-soft hover:shadow-elegant transition-shadow">
+              <Card key={g.id} className={`p-5 rounded-2xl border-border/60 shadow-soft hover:shadow-elegant transition-shadow ${completed ? "bg-gradient-to-br from-primary/10 to-accent/10 border-primary/30" : ""}`}>
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
                     <div className="font-semibold truncate">{g.title}</div>
                     <div className="text-xs text-muted-foreground mt-0.5">{fmtRM(g.current_amount)} of {fmtRM(g.target_amount)}</div>
                   </div>
-                  {savedT && (
+                  {completed ? (
+                    <span className="flex items-center gap-1 text-[10px] font-medium text-primary bg-primary/15 px-2 py-1 rounded-full shrink-0">
+                      🎉 {g.in_wallet ? "In Wallet" : "Completed"}
+                    </span>
+                  ) : savedT && (
                     <span className="flex items-center gap-1 text-[10px] font-medium text-primary bg-primary/10 px-2 py-1 rounded-full shrink-0">
                       <Check className="w-3 h-3" /> Today
                     </span>
@@ -289,6 +330,14 @@ function Goals() {
                   <span>{pct}% complete</span>
                   <span>{fmtRM(remaining)} to go</span>
                 </div>
+                {completed ? (
+                  <div className="mt-3 flex items-center gap-2">
+                    <Button size="sm" variant="outline" className="h-8" onClick={() => setCelebrateGoal(g)}>
+                      Choose what's next
+                    </Button>
+                    <Button size="icon" variant="ghost" className="h-8 w-8 ml-auto" onClick={() => remove(g.id)}><Trash2 className="w-4 h-4" /></Button>
+                  </div>
+                ) : (
                 <div className="mt-3 flex items-end gap-2">
                   <div className="flex-1">
                     <Label className="text-[10px] text-muted-foreground">Auto-save / day</Label>
@@ -332,6 +381,7 @@ function Goals() {
                   </Button>
                   <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => remove(g.id)}><Trash2 className="w-4 h-4" /></Button>
                 </div>
+                )}
               </Card>
             );
           })}
@@ -382,6 +432,33 @@ function Goals() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <Dialog open={!!celebrateGoal} onOpenChange={o => !o && setCelebrateGoal(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="text-2xl">🎉 Goal achieved!</DialogTitle>
+          </DialogHeader>
+          <div className="text-center py-4 space-y-2">
+            <div className="text-5xl">🏆</div>
+            <div className="font-semibold text-lg">{celebrateGoal?.title}</div>
+            <div className="text-sm text-muted-foreground">
+              You saved <span className="text-foreground font-semibold">{fmtRM(celebrateGoal?.current_amount || 0)}</span>. Auto-save for this goal has stopped.
+            </div>
+            <div className="text-sm text-muted-foreground pt-2">What would you like to do next?</div>
+          </div>
+          <DialogFooter className="flex-col sm:flex-col gap-2">
+            <Button onClick={moveToWallet} className="bg-primary text-primary-foreground hover:opacity-90 w-full">
+              🔒 Move to Goal Wallet (locked but accessible)
+            </Button>
+            <Button onClick={releaseToBalance} variant="outline" className="w-full">
+              💰 Transfer back to Available Balance
+            </Button>
+            <Button variant="ghost" onClick={() => setCelebrateGoal(null)} className="w-full">
+              Decide later
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
