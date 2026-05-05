@@ -70,7 +70,11 @@ export type Database = {
       }
       profiles: {
         Row: {
+          allocation_allowance_pct: number
+          allocation_backup_pct: number
+          allocation_savings_pct: number
           created_at: string
+          daily_spending_limit: number
           display_name: string | null
           id: string
           monthly_income: number | null
@@ -80,7 +84,11 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          allocation_allowance_pct?: number
+          allocation_backup_pct?: number
+          allocation_savings_pct?: number
           created_at?: string
+          daily_spending_limit?: number
           display_name?: string | null
           id: string
           monthly_income?: number | null
@@ -90,7 +98,11 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          allocation_allowance_pct?: number
+          allocation_backup_pct?: number
+          allocation_savings_pct?: number
           created_at?: string
+          daily_spending_limit?: number
           display_name?: string | null
           id?: string
           monthly_income?: number | null
@@ -188,7 +200,9 @@ export type Database = {
         Row: {
           created_at: string
           current_amount: number
+          daily_save_amount: number
           id: string
+          last_saved_on: string | null
           target_amount: number
           target_date: string | null
           title: string
@@ -197,7 +211,9 @@ export type Database = {
         Insert: {
           created_at?: string
           current_amount?: number
+          daily_save_amount?: number
           id?: string
+          last_saved_on?: string | null
           target_amount?: number
           target_date?: string | null
           title: string
@@ -206,7 +222,9 @@ export type Database = {
         Update: {
           created_at?: string
           current_amount?: number
+          daily_save_amount?: number
           id?: string
+          last_saved_on?: string | null
           target_amount?: number
           target_date?: string | null
           title?: string
