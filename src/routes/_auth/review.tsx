@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { fmtRM } from "@/lib/format";
 import { Trash2, Plus, Save, Users } from "lucide-react";
 import { toast } from "sonner";
+import { applyRulebook, rulebookReason, type Rulebook } from "@/lib/rulebook";
 
 export const Route = createFileRoute("/_auth/review")({ component: ReviewPage });
 
@@ -32,27 +33,43 @@ function ReviewPage() {
   const [previewUrl, setPreviewUrl] = useState<string>("");
   const [items, setItems] = useState<Item[]>([]);
   const [busy, setBusy] = useState(false);
+  const [rulebook, setRulebook] = useState<Rulebook>({});
 
   useEffect(() => {
-    const raw = sessionStorage.getItem("pending_receipt");
-    if (!raw) {
-      toast.error("No receipt to review");
-      navigate({ to: "/upload" });
-      return;
-    }
-    const { parsed, imageUrl, previewUrl } = JSON.parse(raw);
-    setMerchant(parsed.merchant ?? "");
-    setPurchasedAt((parsed.purchased_at ?? new Date().toISOString()).slice(0, 16));
-    setImageUrl(imageUrl);
-    setPreviewUrl(previewUrl ?? "");
-    setItems((parsed.items ?? []).map((it: any) => ({
-      name: it.name ?? "",
-      price: Number(it.price) || 0,
-      quantity: Number(it.quantity) || 1,
-      category: it.category ?? "Others",
-      is_essential: it.is_essential ?? true,
-      split_count: 1,
-    })));
+    (async () => {
+      const { data } = await supabase
+        .from("profiles")
+        .select("primary_transport, non_negotiables")
+        .maybeSingle();
+      const rb: Rulebook = {
+        primaryTransport: data?.primary_transport ?? null,
+        nonNegotiables: (data?.non_negotiables as string[] | null) ?? [],
+      };
+      setRulebook(rb);
+
+      const raw = sessionStorage.getItem("pending_receipt");
+      if (!raw) {
+        toast.error("No receipt to review");
+        navigate({ to: "/upload" });
+        return;
+      }
+      const { parsed, imageUrl, previewUrl } = JSON.parse(raw);
+      setMerchant(parsed.merchant ?? "");
+      setPurchasedAt((parsed.purchased_at ?? new Date().toISOString()).slice(0, 16));
+      setImageUrl(imageUrl);
+      setPreviewUrl(previewUrl ?? "");
+      setItems((parsed.items ?? []).map((it: any) => {
+        const base = {
+          name: it.name ?? "",
+          price: Number(it.price) || 0,
+          quantity: Number(it.quantity) || 1,
+          category: it.category ?? "Others",
+          is_essential: it.is_essential ?? true,
+          split_count: 1,
+        };
+        return { ...base, is_essential: applyRulebook(base, rb) };
+      }));
+    })();
   }, [navigate]);
 
   const update = (i: number, patch: Partial<Item>) =>
@@ -175,6 +192,12 @@ function ReviewPage() {
                   <Switch checked={it.is_essential} onCheckedChange={v => update(i, { is_essential: v })} />
                   <span>{it.is_essential ? "Essential" : "Non-essential"}</span>
                 </label>
+                {(() => {
+                  const reason = rulebookReason(it, rulebook, it.is_essential);
+                  return reason ? (
+                    <span className="text-xs text-accent">· {reason}</span>
+                  ) : null;
+                })()}
                 <div className="flex items-center gap-2">
                   <Users className="w-4 h-4 text-muted-foreground" />
                   <span className="text-muted-foreground text-xs">Split between</span>
