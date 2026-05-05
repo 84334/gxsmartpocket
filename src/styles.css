@@ -81,6 +81,13 @@
   --shadow-elegant: 0 10px 40px -12px oklch(0.22 0.06 255 / 0.25);
   --shadow-glow: 0 0 60px oklch(0.82 0.16 165 / 0.35);
 
+  /* GXBank brand accents */
+  --gx-yellow: oklch(0.88 0.18 95);
+  --gx-yellow-deep: oklch(0.82 0.19 88);
+  --gx-ink: oklch(0.16 0.02 250);
+  --gradient-gx: linear-gradient(135deg, oklch(0.88 0.18 95) 0%, oklch(0.82 0.19 88) 100%);
+  --shadow-gx: 0 12px 36px -14px oklch(0.82 0.19 88 / 0.55);
+
   --chart-1: oklch(0.22 0.06 255);
   --chart-2: oklch(0.72 0.16 175);
   --chart-3: oklch(0.78 0.16 75);
@@ -126,6 +133,11 @@
 @utility bg-gradient-card { background-image: var(--gradient-card); }
 @utility shadow-elegant { box-shadow: var(--shadow-elegant); }
 @utility shadow-glow { box-shadow: var(--shadow-glow); }
+@utility bg-gradient-gx { background-image: var(--gradient-gx); }
+@utility shadow-gx { box-shadow: var(--shadow-gx); }
+@utility bg-gx-yellow { background-color: var(--gx-yellow); }
+@utility text-gx-ink { color: var(--gx-ink); }
+@utility bg-gx-ink { background-color: var(--gx-ink); }
 
 @keyframes tree-sway {
   0%, 100% { transform: rotate(-1.2deg); }
