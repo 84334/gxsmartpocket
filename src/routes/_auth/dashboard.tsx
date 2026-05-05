@@ -45,8 +45,8 @@ function Dashboard() {
 
   const totalSpend = items.reduce((s, i) => s + Number(i.price) * Number(i.quantity), 0);
   const fixedTotal = fixed.reduce((s, i) => s + Number(i.amount), 0);
-  const remaining = income - fixedTotal - totalSpend;
   const totalSavings = goals.reduce((s, g) => s + Number(g.current_amount || 0), 0);
+  const remaining = income - fixedTotal - totalSpend - totalSavings;
   const remainingDaily = Math.max(0, dailyLimit - todaySpend);
   const dailyPct = dailyLimit > 0 ? Math.min(100, (todaySpend / dailyLimit) * 100) : 0;
 
