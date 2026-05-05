@@ -1,16 +1,23 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { fmtRM } from "@/lib/format";
-import { Receipt, Upload, Trash2 } from "lucide-react";
+import { Receipt, Upload, Trash2, Camera, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_auth/receipts")({ component: Receipts });
 
 function Receipts() {
+  const navigate = useNavigate();
   const [list, setList] = useState<any[]>([]);
+  const [tab, setTab] = useState("history");
+  const [file, setFile] = useState<File | null>(null);
+  const [preview, setPreview] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+
   const load = async () => {
     const { data } = await supabase.from("receipts").select("*, receipt_items(*)").order("purchased_at", { ascending: false });
     setList(data ?? []);
@@ -24,26 +31,86 @@ function Receipts() {
     load();
   };
 
+  const onPick = (f: File | null) => {
+    setFile(f);
+    setPreview(f ? URL.createObjectURL(f) : null);
+  };
+
+  const submitScan = async () => {
+    if (!file) return;
+    setBusy(true);
+    try {
+      const { data: u } = await supabase.auth.getUser();
+      if (!u.user) throw new Error("Not signed in");
+      const path = `${u.user.id}/${Date.now()}-${file.name.replace(/\s+/g, "_")}`;
+      const { error: upErr } = await supabase.storage.from("receipts").upload(path, file);
+      if (upErr) throw upErr;
+      const { data: signed } = await supabase.storage.from("receipts").createSignedUrl(path, 60 * 60);
+      if (!signed) throw new Error("Could not sign URL");
+      const { data, error } = await supabase.functions.invoke("scan-receipt", { body: { imageUrl: signed.signedUrl } });
+      if (error) throw error;
+      if ((data as any)?.error) throw new Error((data as any).error);
+      sessionStorage.setItem("pending_receipt", JSON.stringify({ parsed: (data as any).parsed, imageUrl: signed.signedUrl, previewUrl: preview }));
+      toast.success("Review the details");
+      navigate({ to: "/review" });
+    } catch (e: any) {
+      toast.error(e.message ?? "Failed to scan");
+    } finally { setBusy(false); }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Receipts</h1>
-          <p className="text-sm text-muted-foreground">{list.length} scanned</p>
+          <p className="text-sm text-muted-foreground">Scan new receipts and browse your history</p>
         </div>
-        <Link to="/upload"><Button variant="hero"><Upload /> New</Button></Link>
       </div>
-      <div className="flex flex-wrap gap-4 text-xs text-muted-foreground">
+
+      <Tabs value={tab} onValueChange={setTab} className="w-full">
+        <TabsList className="grid w-full grid-cols-2 h-10">
+          <TabsTrigger value="scan"><Upload className="w-4 h-4 mr-1.5" /> Scan</TabsTrigger>
+          <TabsTrigger value="history"><Receipt className="w-4 h-4 mr-1.5" /> History ({list.length})</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="scan" className="space-y-4">
+          <Card className="p-6 bg-gradient-card shadow-elegant max-w-2xl mx-auto">
+            <label className="block">
+              <input type="file" accept="image/*" capture="environment" className="hidden"
+                onChange={e => onPick(e.target.files?.[0] ?? null)} />
+              <div className="border-2 border-dashed border-border rounded-xl p-8 text-center cursor-pointer hover:bg-muted transition">
+                {preview ? (
+                  <img src={preview} alt="preview" className="mx-auto max-h-80 rounded-lg" />
+                ) : (
+                  <div className="flex flex-col items-center gap-3 py-8">
+                    <div className="w-14 h-14 rounded-2xl bg-gradient-mint flex items-center justify-center shadow-glow">
+                      <Camera className="w-6 h-6 text-primary" />
+                    </div>
+                    <div className="font-semibold">Tap to choose or take a photo</div>
+                    <div className="text-xs text-muted-foreground">JPG, PNG, HEIC up to 10MB</div>
+                  </div>
+                )}
+              </div>
+            </label>
+            <Button variant="hero" className="w-full mt-4" disabled={!file || busy} onClick={submitScan}>
+              {busy ? <><Loader2 className="animate-spin" /> Reading receipt…</> : <><Upload /> Scan with AI</>}
+            </Button>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="history" className="space-y-4">
+          <div className="flex flex-wrap gap-4 text-xs text-muted-foreground">
         <span className="inline-flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-success" /> Essential (groceries, transport, bills)</span>
         <span className="inline-flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-warning" /> Non-essential (snacks, treats, impulse buys)</span>
-      </div>
-      {!list.length && (
+          </div>
+          {!list.length && (
         <Card className="p-10 text-center bg-gradient-card shadow-elegant">
           <Receipt className="w-10 h-10 mx-auto text-muted-foreground" />
           <p className="mt-3 text-muted-foreground">No receipts yet.</p>
+          <Button variant="hero" className="mt-4" onClick={() => setTab("scan")}><Upload /> Scan one now</Button>
         </Card>
-      )}
-      <div className="grid gap-3">
+          )}
+          <div className="grid gap-3">
         {list.map(r => (
           <Card key={r.id} className="p-4 bg-gradient-card shadow-elegant">
             <div className="flex items-start justify-between gap-3">
@@ -70,7 +137,9 @@ function Receipts() {
             </div>
           </Card>
         ))}
-      </div>
+          </div>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
