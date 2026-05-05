@@ -166,26 +166,27 @@ function Goals() {
   return (
     <div className="space-y-5">
       {/* GX-branded hero */}
-      <Card className="p-6 bg-gx-ink text-white border-0 shadow-gx overflow-hidden relative">
-        <div className="absolute -right-10 -top-10 w-48 h-48 rounded-full bg-gx-yellow opacity-20 blur-2xl" />
+      <Card className="p-7 bg-gradient-gx text-white border-0 shadow-gx overflow-hidden relative rounded-3xl">
+        <div className="absolute -right-16 -top-16 w-72 h-72 rounded-full bg-white/5 blur-3xl" />
+        <div className="absolute -left-10 -bottom-20 w-60 h-60 rounded-full bg-white/5 blur-3xl" />
         <div className="relative flex items-start justify-between flex-wrap gap-4">
           <div>
-            <div className="text-xs font-medium text-gx-yellow tracking-wide uppercase">GX Save</div>
-            <div className="text-3xl md:text-4xl font-bold mt-1">{fmtRM(totalSaved)}</div>
-            <div className="text-sm text-white/70 mt-1">Total saved across {list.length} goal{list.length === 1 ? "" : "s"}</div>
+            <div className="text-[11px] font-medium text-white/60 tracking-[0.18em] uppercase">Total saved</div>
+            <div className="text-4xl md:text-5xl font-semibold mt-2 tracking-tight">{fmtRM(totalSaved)}</div>
+            <div className="text-sm text-white/60 mt-1.5">Across {list.length} goal{list.length === 1 ? "" : "s"}</div>
           </div>
-          <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur">
-            <Flame className="w-4 h-4 text-gx-yellow" />
+          <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur border border-white/10">
+            <Flame className="w-4 h-4 text-white/90" />
             <span className="font-semibold">{streak}</span>
-            <span className="text-white/70 text-sm">day streak</span>
+            <span className="text-white/60 text-sm">day streak</span>
           </div>
         </div>
         {totalTarget > 0 && (
           <div className="relative mt-5">
-            <div className="h-2 rounded-full bg-white/10 overflow-hidden">
-              <div className="h-full bg-gradient-gx transition-all" style={{ width: `${overallPct}%` }} />
+            <div className="h-1.5 rounded-full bg-white/10 overflow-hidden">
+              <div className="h-full bg-white/80 transition-all" style={{ width: `${overallPct}%` }} />
             </div>
-            <div className="flex justify-between text-xs text-white/70 mt-2">
+            <div className="flex justify-between text-xs text-white/60 mt-2">
               <span>{overallPct}% of {fmtRM(totalTarget)}</span>
               <span>{savedToday ? "✓ Saved today" : "Pending today"}</span>
             </div>
@@ -198,7 +199,7 @@ function Goals() {
         <h2 className="text-lg font-semibold">Your goals</h2>
         <Dialog open={openNew} onOpenChange={setOpenNew}>
           <DialogTrigger asChild>
-            <Button size="sm" className="bg-gx-yellow text-gx-ink hover:opacity-90 font-semibold"><Plus className="w-4 h-4" /> New goal</Button>
+            <Button size="sm" className="bg-gx-ink text-white hover:opacity-90 rounded-full px-4"><Plus className="w-4 h-4" /> New goal</Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader><DialogTitle>Create a new goal</DialogTitle></DialogHeader>
@@ -211,7 +212,7 @@ function Goals() {
             </div>
             <DialogFooter>
               <Button variant="ghost" onClick={() => setOpenNew(false)}>Cancel</Button>
-              <Button onClick={add} className="bg-gx-yellow text-gx-ink hover:opacity-90 font-semibold">Create</Button>
+              <Button onClick={add} className="bg-gx-ink text-white hover:opacity-90">Create</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
@@ -224,7 +225,7 @@ function Goals() {
             const remaining = Math.max(0, Number(g.target_amount) - Number(g.current_amount));
             const savedT = g.last_saved_on === todayDate();
             return (
-              <Card key={g.id} className="p-4 hover:shadow-elegant transition-shadow">
+              <Card key={g.id} className="p-5 rounded-2xl border-border/60 shadow-soft hover:shadow-elegant transition-shadow">
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
                     <div className="font-semibold truncate">{g.title}</div>
