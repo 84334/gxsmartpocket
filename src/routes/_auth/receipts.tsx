@@ -3,7 +3,6 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { fmtRM } from "@/lib/format";
 import { Receipt, Upload, Trash2, Camera, Loader2 } from "lucide-react";
 import { toast } from "sonner";
@@ -13,7 +12,6 @@ export const Route = createFileRoute("/_auth/receipts")({ component: Receipts })
 function Receipts() {
   const navigate = useNavigate();
   const [list, setList] = useState<any[]>([]);
-  const [tab, setTab] = useState("history");
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -67,14 +65,9 @@ function Receipts() {
         </div>
       </div>
 
-      <Tabs value={tab} onValueChange={setTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-2 h-10">
-          <TabsTrigger value="scan"><Upload className="w-4 h-4 mr-1.5" /> Scan</TabsTrigger>
-          <TabsTrigger value="history"><Receipt className="w-4 h-4 mr-1.5" /> History ({list.length})</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="scan" className="space-y-4">
-          <Card className="p-6 bg-gradient-card shadow-elegant max-w-2xl mx-auto">
+      <section className="space-y-3">
+        <h2 className="text-lg font-semibold flex items-center gap-2"><Upload className="w-4 h-4" /> Scan</h2>
+        <Card className="p-6 bg-gradient-card shadow-elegant max-w-2xl mx-auto">
             <label className="block">
               <input type="file" accept="image/*" capture="environment" className="hidden"
                 onChange={e => onPick(e.target.files?.[0] ?? null)} />
@@ -96,10 +89,11 @@ function Receipts() {
               {busy ? <><Loader2 className="animate-spin" /> Reading receipt…</> : <><Upload /> Scan with AI</>}
             </Button>
           </Card>
-        </TabsContent>
+      </section>
 
-        <TabsContent value="history" className="space-y-4">
-          <div className="flex flex-wrap gap-4 text-xs text-muted-foreground">
+      <section className="space-y-3">
+        <h2 className="text-lg font-semibold flex items-center gap-2"><Receipt className="w-4 h-4" /> History ({list.length})</h2>
+        <div className="flex flex-wrap gap-4 text-xs text-muted-foreground">
         <span className="inline-flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-success" /> Essential (groceries, transport, bills)</span>
         <span className="inline-flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-warning" /> Non-essential (snacks, treats, impulse buys)</span>
           </div>
@@ -107,7 +101,6 @@ function Receipts() {
         <Card className="p-10 text-center bg-gradient-card shadow-elegant">
           <Receipt className="w-10 h-10 mx-auto text-muted-foreground" />
           <p className="mt-3 text-muted-foreground">No receipts yet.</p>
-          <Button variant="hero" className="mt-4" onClick={() => setTab("scan")}><Upload /> Scan one now</Button>
         </Card>
           )}
           <div className="grid gap-3">
@@ -138,8 +131,7 @@ function Receipts() {
           </Card>
         ))}
           </div>
-        </TabsContent>
-      </Tabs>
+      </section>
     </div>
   );
 }
