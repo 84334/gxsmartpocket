@@ -126,3 +126,20 @@
 @utility bg-gradient-card { background-image: var(--gradient-card); }
 @utility shadow-elegant { box-shadow: var(--shadow-elegant); }
 @utility shadow-glow { box-shadow: var(--shadow-glow); }
+
+@keyframes tree-sway {
+  0%, 100% { transform: rotate(-1.2deg); }
+  50% { transform: rotate(1.2deg); }
+}
+@keyframes leaf-flutter {
+  0%, 100% { transform: translateY(0) rotate(0deg); opacity: 0.9; }
+  50% { transform: translateY(-4px) rotate(6deg); opacity: 1; }
+}
+@keyframes golden-glow {
+  0%, 100% { filter: drop-shadow(0 0 12px rgba(255, 200, 80, 0.5)); }
+  50% { filter: drop-shadow(0 0 24px rgba(255, 220, 120, 0.85)); }
+}
+.tree-sway { transform-origin: 50% 95%; animation: tree-sway 6s ease-in-out infinite; }
+.tree-canopy { transform-origin: 50% 100%; transition: transform 1.2s cubic-bezier(.2,.8,.2,1), opacity 1.2s ease; }
+.tree-trunk { transition: all 1.2s cubic-bezier(.2,.8,.2,1); }
+.tree-golden { animation: golden-glow 3.5s ease-in-out infinite; }

@@ -77,10 +77,14 @@ export type Database = {
           daily_spending_limit: number
           display_name: string | null
           id: string
+          last_streak_date: string | null
+          longest_streak: number
           monthly_income: number | null
           non_negotiables: string[] | null
           onboarded_at: string | null
           primary_transport: string | null
+          streak_days: number
+          streak_goal_days: number
           updated_at: string
         }
         Insert: {
@@ -91,10 +95,14 @@ export type Database = {
           daily_spending_limit?: number
           display_name?: string | null
           id: string
+          last_streak_date?: string | null
+          longest_streak?: number
           monthly_income?: number | null
           non_negotiables?: string[] | null
           onboarded_at?: string | null
           primary_transport?: string | null
+          streak_days?: number
+          streak_goal_days?: number
           updated_at?: string
         }
         Update: {
@@ -105,10 +113,14 @@ export type Database = {
           daily_spending_limit?: number
           display_name?: string | null
           id?: string
+          last_streak_date?: string | null
+          longest_streak?: number
           monthly_income?: number | null
           non_negotiables?: string[] | null
           onboarded_at?: string | null
           primary_transport?: string | null
+          streak_days?: number
+          streak_goal_days?: number
           updated_at?: string
         }
         Relationships: []

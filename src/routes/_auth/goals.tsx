@@ -9,6 +9,7 @@ import { Progress } from "@/components/ui/progress";
 import { fmtRM, startOfToday, todayDate } from "@/lib/format";
 import { Plus, Trash2, Target, Lock, AlertTriangle, PiggyBank } from "lucide-react";
 import { toast } from "sonner";
+import { SavingsTree } from "@/components/SavingsTree";
 import {
   AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle,
   AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction,
@@ -23,6 +24,10 @@ function Goals() {
   const [date, setDate] = useState("");
   const [dailyLimit, setDailyLimit] = useState<number>(20);
   const [todaySpend, setTodaySpend] = useState<number>(0);
+  const [streak, setStreak] = useState<number>(0);
+  const [longestStreak, setLongestStreak] = useState<number>(0);
+  const [streakGoal, setStreakGoal] = useState<number>(30);
+  const [lastStreakDate, setLastStreakDate] = useState<string | null>(null);
   const [withdrawId, setWithdrawId] = useState<string | null>(null);
   const [withdrawAmt, setWithdrawAmt] = useState("");
   const [cooldown, setCooldown] = useState(0);
@@ -33,11 +38,15 @@ function Goals() {
     const since = startOfToday();
     const [{ data: gs }, { data: pr }, { data: it }] = await Promise.all([
       supabase.from("savings_goals").select("*").order("created_at", { ascending: false }),
-      supabase.from("profiles").select("daily_spending_limit").maybeSingle(),
+      supabase.from("profiles").select("daily_spending_limit, streak_days, longest_streak, streak_goal_days, last_streak_date").maybeSingle(),
       supabase.from("receipt_items").select("price,quantity,created_at").gte("created_at", since),
     ]);
     setList(gs ?? []);
     setDailyLimit(Number(pr?.daily_spending_limit ?? 20));
+    setStreak(Number(pr?.streak_days ?? 0));
+    setLongestStreak(Number(pr?.longest_streak ?? 0));
+    setStreakGoal(Number(pr?.streak_goal_days ?? 30));
+    setLastStreakDate((pr as any)?.last_streak_date ?? null);
     setTodaySpend((it ?? []).reduce((s, i: any) => s + Number(i.price) * Number(i.quantity), 0));
     return { goals: gs ?? [], limit: Number(pr?.daily_spending_limit ?? 20), spend: (it ?? []).reduce((s, i: any) => s + Number(i.price) * Number(i.quantity), 0) };
   };
@@ -104,6 +113,38 @@ function Goals() {
   };
 
   const remove = async (id: string) => { await supabase.from("savings_goals").delete().eq("id", id); load(); };
+
+  const checkInStreak = async () => {
+    const { data: u } = await supabase.auth.getUser();
+    if (!u.user) return;
+    const today = todayDate();
+    if (lastStreakDate === today) return toast("Already checked in today");
+    const yest = new Date(); yest.setDate(yest.getDate() - 1);
+    const yStr = yest.toISOString().slice(0, 10);
+    const newStreak = lastStreakDate === yStr ? streak + 1 : 1;
+    const newLongest = Math.max(longestStreak, newStreak);
+    await supabase.from("profiles").update({
+      streak_days: newStreak, longest_streak: newLongest, last_streak_date: today,
+    }).eq("id", u.user.id);
+    setStreak(newStreak); setLongestStreak(newLongest); setLastStreakDate(today);
+    toast.success(`🌱 Day ${newStreak} streak!`);
+  };
+
+  const resetStreak = async () => {
+    const { data: u } = await supabase.auth.getUser();
+    if (!u.user) return;
+    await supabase.from("profiles").update({ streak_days: 0 }).eq("id", u.user.id);
+    setStreak(0);
+    toast("Streak reset");
+  };
+
+  const saveStreakGoal = async (v: number) => {
+    const { data: u } = await supabase.auth.getUser();
+    if (!u.user || v < 1) return;
+    await supabase.from("profiles").update({ streak_goal_days: v }).eq("id", u.user.id);
+    setStreakGoal(v);
+    toast.success("Streak goal updated");
+  };
 
   const startWithdraw = (id: string) => {
     setWithdrawId(id); setWithdrawAmt(""); setCooldown(10);
@@ -252,6 +293,45 @@ function Goals() {
           No goals yet. Create your first one above.
         </Card>
       )}
+
+      {/* Gamified savings tree */}
+      <Card className="p-6 bg-gradient-card shadow-elegant overflow-hidden">
+        <div className="flex items-start justify-between flex-wrap gap-3 mb-4">
+          <div>
+            <h3 className="font-semibold text-lg">Your savings tree</h3>
+            <p className="text-xs text-muted-foreground">Grows as your daily saving streak builds toward your goal.</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <Label className="text-xs">Streak goal (days)</Label>
+            <Input type="number" className="w-20" defaultValue={streakGoal}
+              onBlur={e => { const v = Number(e.target.value); if (v !== streakGoal) saveStreakGoal(v); }} />
+          </div>
+        </div>
+        <div className="grid md:grid-cols-[1fr_1.2fr] gap-6 items-center">
+          <div className="rounded-2xl bg-gradient-to-b from-sky-50 to-emerald-50 dark:from-slate-800 dark:to-slate-900 p-4">
+            <SavingsTree streak={streak} goal={streakGoal} />
+          </div>
+          <div className="space-y-3">
+            <div className="grid grid-cols-3 gap-2">
+              <Stat label="Current streak" value={`${streak} 🔥`} accent />
+              <Stat label="Longest" value={`${longestStreak}`} />
+              <Stat label="Goal" value={`${streakGoal}d`} />
+            </div>
+            <Progress value={Math.min(100, (streak / Math.max(1, streakGoal)) * 100)} />
+            <p className="text-xs text-muted-foreground">
+              Check in each day you stay within your daily limit. Miss a day and the tree gently regresses.
+            </p>
+            <div className="flex gap-2">
+              <Button variant="hero" onClick={checkInStreak} disabled={lastStreakDate === todayDate()}>
+                {lastStreakDate === todayDate() ? "Checked in today" : "Check in today"}
+              </Button>
+              <Button variant="outline" onClick={resetStreak} disabled={streak === 0}>
+                Reset
+              </Button>
+            </div>
+          </div>
+        </div>
+      </Card>
 
       <AlertDialog open={!!withdrawId} onOpenChange={o => !o && setWithdrawId(null)}>
         <AlertDialogContent>
