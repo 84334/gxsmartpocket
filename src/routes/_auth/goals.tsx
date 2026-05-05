@@ -155,20 +155,23 @@ function Goals() {
 
   const remove = async (id: string) => { await supabase.from("savings_goals").delete().eq("id", id); load(); };
 
-  const moveToWallet = async () => {
+  const keepInTotalSaved = async () => {
     if (!celebrateGoal) return;
+    // Mark as decided; funds remain counted in Total Saved (locked away from available balance).
     await supabase.from("savings_goals").update({ in_wallet: true }).eq("id", celebrateGoal.id);
-    toast.success("🔒 Locked in your Goal Wallet");
-    setCelebrateGoal(null); load();
+    toast.success(`${fmtRM(celebrateGoal.current_amount)} kept in Total Saved`);
+    setCelebrateGoal(null);
+    await load();
   };
 
   const releaseToBalance = async () => {
     if (!celebrateGoal) return;
-    // Releasing returns the saved funds to the user's available balance
-    // by zeroing this goal out (it stays as a completed record).
-    await supabase.from("savings_goals").update({ current_amount: 0, in_wallet: false }).eq("id", celebrateGoal.id);
-    toast.success(`${fmtRM(celebrateGoal.current_amount)} returned to your available balance`);
-    setCelebrateGoal(null); load();
+    // Returns the saved funds to the user's available balance by zeroing this goal out.
+    const amt = Number(celebrateGoal.current_amount || 0);
+    await supabase.from("savings_goals").update({ current_amount: 0, in_wallet: true }).eq("id", celebrateGoal.id);
+    toast.success(`${fmtRM(amt)} returned to your available balance`);
+    setCelebrateGoal(null);
+    await load();
   };
 
   const saveDailyLimit = async () => {
@@ -317,7 +320,7 @@ function Goals() {
                   </div>
                   {completed ? (
                     <span className="flex items-center gap-1 text-[10px] font-medium text-primary bg-primary/15 px-2 py-1 rounded-full shrink-0">
-                      🎉 {g.in_wallet ? "In Wallet" : "Completed"}
+                      🎉 Completed
                     </span>
                   ) : savedT && (
                     <span className="flex items-center gap-1 text-[10px] font-medium text-primary bg-primary/10 px-2 py-1 rounded-full shrink-0">
@@ -332,9 +335,11 @@ function Goals() {
                 </div>
                 {completed ? (
                   <div className="mt-3 flex items-center gap-2">
-                    <Button size="sm" variant="outline" className="h-8" onClick={() => setCelebrateGoal(g)}>
-                      Choose what's next
-                    </Button>
+                    {!g.in_wallet && (
+                      <Button size="sm" variant="outline" className="h-8" onClick={() => setCelebrateGoal(g)}>
+                        Choose what's next
+                      </Button>
+                    )}
                     <Button size="icon" variant="ghost" className="h-8 w-8 ml-auto" onClick={() => remove(g.id)}><Trash2 className="w-4 h-4" /></Button>
                   </div>
                 ) : (
@@ -447,11 +452,11 @@ function Goals() {
             <div className="text-sm text-muted-foreground pt-2">What would you like to do next?</div>
           </div>
           <DialogFooter className="flex-col sm:flex-col gap-2">
-            <Button onClick={moveToWallet} className="bg-primary text-primary-foreground hover:opacity-90 w-full">
-              🔒 Move to Goal Wallet (locked but accessible)
-            </Button>
-            <Button onClick={releaseToBalance} variant="outline" className="w-full">
+            <Button onClick={releaseToBalance} className="bg-primary text-primary-foreground hover:opacity-90 w-full">
               💰 Transfer back to Available Balance
+            </Button>
+            <Button onClick={keepInTotalSaved} variant="outline" className="w-full">
+              🏦 Keep in Total Saved
             </Button>
             <Button variant="ghost" onClick={() => setCelebrateGoal(null)} className="w-full">
               Decide later
