@@ -91,10 +91,11 @@ function Dashboard() {
             </Button>
           </Link>
         </div>
-        <div className="relative grid grid-cols-3 gap-3 mt-7 pt-5 border-t border-white/10">
+        <div className="relative grid grid-cols-4 gap-3 mt-7 pt-5 border-t border-white/10">
+          <MiniStat label="Income" value={fmtRM(income)} />
+          <MiniStat label="Fixed" value={fmtRM(fixedTotal)} />
           <MiniStat label="Spent" value={fmtRM(totalSpend)} />
           <MiniStat label="Saved" value={fmtRM(totalSavings)} accent />
-          <MiniStat label="Income" value={fmtRM(income)} />
         </div>
       </Card>
 
