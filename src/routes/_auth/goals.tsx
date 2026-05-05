@@ -43,10 +43,23 @@ function Goals() {
     ]);
     setList(gs ?? []);
     setDailyLimit(Number(pr?.daily_spending_limit ?? 20));
-    setStreak(Number(pr?.streak_days ?? 0));
+    let curStreak = Number(pr?.streak_days ?? 0);
+    const lastDate = (pr as any)?.last_streak_date ?? null;
+    const today = todayDate();
+    const yest = new Date(); yest.setDate(yest.getDate() - 1);
+    const yStr = yest.toISOString().slice(0, 10);
+    // Auto-reset: if user did not save yesterday or today, streak is broken
+    if (curStreak > 0 && lastDate !== today && lastDate !== yStr) {
+      const { data: u } = await supabase.auth.getUser();
+      if (u.user) {
+        await supabase.from("profiles").update({ streak_days: 0 }).eq("id", u.user.id);
+      }
+      curStreak = 0;
+    }
+    setStreak(curStreak);
     setLongestStreak(Number(pr?.longest_streak ?? 0));
     setStreakGoal(Number(pr?.streak_goal_days ?? 30));
-    setLastStreakDate((pr as any)?.last_streak_date ?? null);
+    setLastStreakDate(lastDate);
     setTodaySpend((it ?? []).reduce((s, i: any) => s + Number(i.price) * Number(i.quantity), 0));
     return { goals: gs ?? [], limit: Number(pr?.daily_spending_limit ?? 20), spend: (it ?? []).reduce((s, i: any) => s + Number(i.price) * Number(i.quantity), 0) };
   };
@@ -136,30 +149,6 @@ function Goals() {
     }).eq("id", u.user.id);
     setStreak(newStreak); setLongestStreak(newLongest); setLastStreakDate(today);
     toast.success(`🌱 Day ${newStreak} streak — your tree grew!`);
-  };
-
-  const checkInStreak = async () => {
-    const { data: u } = await supabase.auth.getUser();
-    if (!u.user) return;
-    const today = todayDate();
-    if (lastStreakDate === today) return toast("Already checked in today");
-    const yest = new Date(); yest.setDate(yest.getDate() - 1);
-    const yStr = yest.toISOString().slice(0, 10);
-    const newStreak = lastStreakDate === yStr ? streak + 1 : 1;
-    const newLongest = Math.max(longestStreak, newStreak);
-    await supabase.from("profiles").update({
-      streak_days: newStreak, longest_streak: newLongest, last_streak_date: today,
-    }).eq("id", u.user.id);
-    setStreak(newStreak); setLongestStreak(newLongest); setLastStreakDate(today);
-    toast.success(`🌱 Day ${newStreak} streak!`);
-  };
-
-  const resetStreak = async () => {
-    const { data: u } = await supabase.auth.getUser();
-    if (!u.user) return;
-    await supabase.from("profiles").update({ streak_days: 0 }).eq("id", u.user.id);
-    setStreak(0);
-    toast("Streak reset");
   };
 
   const saveStreakGoal = async (v: number) => {
@@ -343,16 +332,13 @@ function Goals() {
             </div>
             <Progress value={Math.min(100, (streak / Math.max(1, streakGoal)) * 100)} />
             <p className="text-xs text-muted-foreground">
-              Every time you save toward a goal, your streak grows and the tree evolves. Miss a day and it gently regresses.
+              Your streak grows automatically each day you save money toward a goal. Miss a day and it resets to 0.
             </p>
-            <div className="flex gap-2">
-              <Button variant="hero" onClick={checkInStreak} disabled={lastStreakDate === todayDate()}>
-                {lastStreakDate === todayDate() ? "Checked in today" : "Check in today"}
-              </Button>
-              <Button variant="outline" onClick={resetStreak} disabled={streak === 0}>
-                Reset
-              </Button>
-            </div>
+            <p className="text-xs text-muted-foreground">
+              {lastStreakDate === todayDate()
+                ? "✅ You've saved today — streak is safe."
+                : "💡 Save money today to keep your streak alive."}
+            </p>
           </div>
         </div>
       </Card>
