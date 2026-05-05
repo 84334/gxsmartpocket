@@ -166,7 +166,7 @@ export function SavingsTree({ streak, goal }: Props) {
       <div className="text-center mt-2">
         <div className={`text-sm font-semibold ${isGolden ? "text-warning" : "text-foreground"}`}>{stage}</div>
         <div className="text-xs text-muted-foreground">
-          {streak} / {goal} day streak · {Math.round(p * 100)}%
+          {streak} day{streak === 1 ? "" : "s"} streak
         </div>
       </div>
     </div>
