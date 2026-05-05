@@ -292,7 +292,7 @@ function Goals() {
                 <div className="mt-3 flex items-end gap-2">
                   <div className="flex-1">
                     <Label className="text-[10px] text-muted-foreground">Auto-save / day</Label>
-                    <Input type="number" className="h-8" defaultValue={Number(g.daily_save_amount || 0)}
+                    <Input key={`ds-${g.id}-${g.daily_save_amount}`} type="number" className="h-8" defaultValue={Number(g.daily_save_amount || 0)}
                       onBlur={e => { const v = Number(e.target.value); if (v !== Number(g.daily_save_amount)) updateDaily(g.id, v); }} />
                   </div>
                   <div className="flex-1">
