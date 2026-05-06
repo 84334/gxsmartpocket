@@ -1,17 +1,87 @@
 import { useState } from "react";
-import { Info, Sparkles, CloudRain, CloudLightning, Sun } from "lucide-react";
+import { Info, ChevronRight, RotateCcw } from "lucide-react";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger,
 } from "@/components/ui/dialog";
 
 /**
- * Friendly explainer for the savings-tree gamification.
- * Uses cards + small animations to teach how the streak/weather works.
+ * Stacked, swipe-style explainer for the savings-tree gamification.
+ * Click the top card to advance. 5 cards, each with a small animation.
  */
+
+type Slide = {
+  title: string;
+  body: string;
+  bg: string;
+  art: JSX.Element;
+};
+
+const SLIDES: Slide[] = [
+  {
+    title: "Meet your savings tree",
+    body: "A living tree that reflects your saving streak. The more you save, the more it grows.",
+    bg: "from-emerald-500/15 to-teal-500/5",
+    art: (
+      <div className="text-7xl animate-[breathe_3s_ease-in-out_infinite]">🌳</div>
+    ),
+  },
+  {
+    title: "Save daily, watch it grow",
+    body: "Every day you stay under your daily limit, the leftover auto-saves and your tree levels up.",
+    bg: "from-lime-500/15 to-emerald-500/5",
+    art: (
+      <div className="relative h-24 flex items-end justify-center gap-4">
+        <div className="text-3xl animate-[grow1_2.4s_ease-in-out_infinite]">🌱</div>
+        <div className="text-4xl animate-[grow2_2.4s_ease-in-out_infinite]">🌿</div>
+        <div className="text-5xl animate-[grow3_2.4s_ease-in-out_infinite]">🌳</div>
+      </div>
+    ),
+  },
+  {
+    title: "Hit all goals → friends visit",
+    body: "When every goal is on track, sunshine breaks out and little animals come to play.",
+    bg: "from-yellow-400/15 to-emerald-500/5",
+    art: (
+      <div className="relative h-24 w-48 mx-auto">
+        <div className="absolute top-0 left-2 text-3xl animate-[spin_8s_linear_infinite]">☀️</div>
+        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 text-5xl">🌳</div>
+        <div className="absolute bottom-1 left-2 text-2xl animate-[hop_1.2s_ease-in-out_infinite]">🐰</div>
+        <div className="absolute top-4 right-2 text-2xl animate-[fly_3s_ease-in-out_infinite]">🦋</div>
+      </div>
+    ),
+  },
+  {
+    title: "Miss a day → bad weather",
+    body: "Skip your saving day or overspend, and clouds roll in. Your streak resets — but you can rebuild.",
+    bg: "from-slate-500/15 to-blue-500/5",
+    art: (
+      <div className="relative h-24 w-48 mx-auto">
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 text-4xl animate-[shake_0.8s_ease-in-out_infinite]">⛈️</div>
+        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 text-5xl opacity-80">🌳</div>
+        <div className="absolute top-10 left-6 text-sm animate-[drop_1.2s_linear_infinite]">💧</div>
+        <div className="absolute top-10 right-10 text-sm animate-[drop_1.4s_linear_infinite_0.3s]">💧</div>
+      </div>
+    ),
+  },
+  {
+    title: "Tips to keep growing",
+    body: "Set a realistic daily limit, scan receipts daily, and start with one small goal. Small wins beat one big push.",
+    bg: "from-violet-500/15 to-fuchsia-500/5",
+    art: (
+      <div className="text-6xl animate-[breathe_3s_ease-in-out_infinite]">🌟</div>
+    ),
+  },
+];
+
 export function TreeHowItWorks() {
   const [open, setOpen] = useState(false);
+  const [i, setI] = useState(0);
+
+  const next = () => setI((p) => (p + 1) % SLIDES.length);
+  const reset = () => setI(0);
+
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (v) setI(0); }}>
       <DialogTrigger asChild>
         <button
           type="button"
@@ -21,77 +91,75 @@ export function TreeHowItWorks() {
           <Info className="w-4 h-4" />
         </button>
       </DialogTrigger>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Sparkles className="w-5 h-5 text-primary" /> Your savings tree
-          </DialogTitle>
+          <DialogTitle>Your savings tree</DialogTitle>
         </DialogHeader>
 
-        <p className="text-sm text-muted-foreground">
-          Every day you spend less than your daily limit, the leftover gets
-          auto‑saved into your goals — and your tree grows. Skip a day and
-          your streak resets back to zero.
-        </p>
-
-        <div className="grid grid-cols-2 gap-3 mt-2">
-          <div className="rounded-xl border border-border/60 p-3 bg-card/40 hover:scale-[1.02] transition-transform">
-            <div className="text-2xl mb-1 animate-[hop_2s_ease-in-out_infinite]">🌱</div>
-            <div className="text-sm font-semibold">Save daily</div>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              Stay under your limit → leftover money is auto‑saved.
-            </p>
-          </div>
-          <div className="rounded-xl border border-border/60 p-3 bg-card/40 hover:scale-[1.02] transition-transform">
-            <div className="text-2xl mb-1 animate-[hop_2.4s_ease-in-out_infinite]">🌳</div>
-            <div className="text-sm font-semibold">Tree grows</div>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              Each saved day = one streak day. The longer the streak, the bigger the tree.
-            </p>
-          </div>
-
-          <div className="rounded-xl border border-emerald-400/30 p-3 bg-emerald-500/5">
-            <div className="flex items-center gap-1 text-2xl mb-1">
-              <Sun className="w-5 h-5 text-yellow-400 animate-pulse" />
-              <span>🐰🦋</span>
-            </div>
-            <div className="text-sm font-semibold text-emerald-400">All goals on track</div>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              Sunshine + cute animals appear to celebrate.
-            </p>
-          </div>
-
-          <div className="rounded-xl border border-blue-400/30 p-3 bg-blue-500/5">
-            <div className="flex items-center gap-1 text-2xl mb-1">
-              <CloudRain className="w-5 h-5 text-blue-300 animate-bounce" />
-            </div>
-            <div className="text-sm font-semibold text-blue-300">Missed a save</div>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              A rainy day rolls in — get back on track tomorrow.
-            </p>
-          </div>
-
-          <div className="col-span-2 rounded-xl border border-destructive/30 p-3 bg-destructive/5">
-            <div className="flex items-center gap-2 text-2xl mb-1">
-              <CloudLightning className="w-5 h-5 text-destructive animate-pulse" />
-              <span className="text-base">⛈️</span>
-            </div>
-            <div className="text-sm font-semibold text-destructive">Over your daily limit</div>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              A storm appears and nothing gets auto‑saved today. Tighten spending tomorrow to clear the skies.
-            </p>
-          </div>
+        {/* Stacked cards */}
+        <div className="relative h-72 select-none" onClick={next}>
+          {SLIDES.map((s, idx) => {
+            const offset = (idx - i + SLIDES.length) % SLIDES.length;
+            const isTop = offset === 0;
+            const visible = offset < 3;
+            if (!visible) return null;
+            return (
+              <div
+                key={idx}
+                className={`absolute inset-0 rounded-2xl border border-border/60 bg-gradient-to-br ${s.bg} p-5 flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-300 ease-out shadow-soft`}
+                style={{
+                  transform: `translateY(${offset * 10}px) scale(${1 - offset * 0.04})`,
+                  zIndex: SLIDES.length - offset,
+                  opacity: isTop ? 1 : 0.6,
+                  pointerEvents: isTop ? "auto" : "none",
+                }}
+              >
+                <div className="flex-1 flex items-center justify-center w-full">{s.art}</div>
+                <div className="font-semibold text-base mt-2">{s.title}</div>
+                <p className="text-xs text-muted-foreground mt-1.5 max-w-[20rem]">{s.body}</p>
+              </div>
+            );
+          })}
         </div>
 
-        <div className="text-xs text-muted-foreground text-center pt-1">
-          Tip: small daily wins beat one big push 🌟
+        {/* Dots + actions */}
+        <div className="flex items-center justify-between pt-2">
+          <div className="flex gap-1.5">
+            {SLIDES.map((_, idx) => (
+              <span
+                key={idx}
+                className={`h-1.5 rounded-full transition-all ${idx === i ? "w-5 bg-primary" : "w-1.5 bg-muted"}`}
+              />
+            ))}
+          </div>
+          {i === SLIDES.length - 1 ? (
+            <button
+              type="button"
+              onClick={reset}
+              className="text-xs inline-flex items-center gap-1 text-muted-foreground hover:text-foreground"
+            >
+              <RotateCcw className="w-3 h-3" /> Restart
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={next}
+              className="text-xs inline-flex items-center gap-1 text-primary font-medium"
+            >
+              Next <ChevronRight className="w-3 h-3" />
+            </button>
+          )}
         </div>
 
         <style>{`
-          @keyframes hop {
-            0%,100% { transform: translateY(0); }
-            50% { transform: translateY(-4px); }
-          }
+          @keyframes breathe { 0%,100% { transform: scale(1); } 50% { transform: scale(1.08); } }
+          @keyframes hop { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+          @keyframes fly { 0%,100% { transform: translate(0,0); } 50% { transform: translate(-10px,-6px); } }
+          @keyframes shake { 0%,100% { transform: translateX(-50%) rotate(-3deg); } 50% { transform: translateX(-50%) rotate(3deg); } }
+          @keyframes drop { 0% { transform: translateY(0); opacity: 1; } 100% { transform: translateY(30px); opacity: 0; } }
+          @keyframes grow1 { 0%,100% { transform: scale(1); } 50% { transform: scale(1.1); } }
+          @keyframes grow2 { 0%,100% { transform: scale(1.05); } 50% { transform: scale(1.18); } }
+          @keyframes grow3 { 0%,100% { transform: scale(1.1); } 50% { transform: scale(1.25); } }
         `}</style>
       </DialogContent>
     </Dialog>
