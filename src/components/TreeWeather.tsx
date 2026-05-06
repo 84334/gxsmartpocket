@@ -1,4 +1,7 @@
 import { useMemo } from "react";
+import bunnyImg from "@/assets/bunny.png";
+import butterflyImg from "@/assets/butterfly.png";
+import birdImg from "@/assets/bird.png";
 
 type Mood = "happy" | "calm" | "rain" | "storm";
 
@@ -91,24 +94,24 @@ export function TreeWeather({ mood }: { mood: Mood }) {
       {/* Cute critters for happy */}
       {mood === "happy" && (
         <>
-          <div
-            className="absolute text-2xl"
-            style={{ bottom: "12%", left: "8%", animation: "hop 2.4s ease-in-out infinite" }}
-          >
-            🐰
-          </div>
-          <div
-            className="absolute text-xl"
+          <img
+            src={bunnyImg}
+            alt=""
+            className="absolute w-12 h-12 object-contain"
+            style={{ bottom: "8%", left: "6%", animation: "hop 2.4s ease-in-out infinite" }}
+          />
+          <img
+            src={butterflyImg}
+            alt=""
+            className="absolute w-8 h-8 object-contain"
             style={{ top: "30%", left: "10%", animation: "fly 6s linear infinite" }}
-          >
-            🦋
-          </div>
-          <div
-            className="absolute text-lg"
-            style={{ top: "18%", right: "20%", animation: "fly-r 7s linear infinite" }}
-          >
-            🐦
-          </div>
+          />
+          <img
+            src={birdImg}
+            alt=""
+            className="absolute w-10 h-10 object-contain"
+            style={{ top: "14%", right: "16%", animation: "fly-r 7s linear infinite" }}
+          />
         </>
       )}
 
