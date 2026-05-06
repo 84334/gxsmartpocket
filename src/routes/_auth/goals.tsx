@@ -480,7 +480,7 @@ function Goals() {
             <div className="font-semibold">{longestStreak} days</div>
           </div>
         </div>
-        <div className="rounded-2xl bg-gradient-to-b from-sky-50 to-emerald-50 dark:from-slate-800 dark:to-slate-900 p-4">
+        <div className="rounded-2xl p-4">
           <SavingsTree streak={streak} goal={Math.max(30, longestStreak || 30)} />
         </div>
       </Card>
