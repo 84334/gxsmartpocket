@@ -3,11 +3,18 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { fmtRM } from "@/lib/format";
-import { Receipt, Upload, Trash2, Camera, Loader2 } from "lucide-react";
+import { Receipt, Upload, Trash2, Camera, Loader2, Pencil, Plus, Save } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_auth/receipts")({ component: Receipts });
+
+const CATEGORIES = ["Food", "Transport", "Utilities", "Shopping", "Entertainment", "Others"] as const;
 
 function ReceiptItemRow({ item }: { item: any }) {
   const [expanded, setExpanded] = useState(false);
@@ -35,6 +42,11 @@ function Receipts() {
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [editing, setEditing] = useState<any | null>(null);
+  const [editItems, setEditItems] = useState<any[]>([]);
+  const [editMerchant, setEditMerchant] = useState("");
+  const [editPurchasedAt, setEditPurchasedAt] = useState("");
+  const [savingEdit, setSavingEdit] = useState(false);
 
   const load = async () => {
     const { data } = await supabase.from("receipts").select("*, receipt_items(*)").order("purchased_at", { ascending: false });
@@ -47,6 +59,62 @@ function Receipts() {
     if (error) return toast.error(error.message);
     toast.success("Deleted");
     load();
+  };
+
+  const openEdit = (r: any) => {
+    setEditing(r);
+    setEditMerchant(r.merchant ?? "");
+    setEditPurchasedAt(new Date(r.purchased_at).toISOString().slice(0, 16));
+    setEditItems((r.receipt_items ?? []).map((it: any) => ({
+      id: it.id,
+      name: it.name,
+      price: Number(it.price),
+      quantity: Number(it.quantity),
+      category: it.category,
+      is_essential: it.is_essential,
+    })));
+  };
+
+  const updateItem = (i: number, patch: any) =>
+    setEditItems(prev => prev.map((it, idx) => idx === i ? { ...it, ...patch } : it));
+  const removeItem = (i: number) => setEditItems(prev => prev.filter((_, idx) => idx !== i));
+  const addItem = () => setEditItems(prev => [...prev, { name: "", price: 0, quantity: 1, category: "Others", is_essential: true }]);
+
+  const editTotal = editItems.reduce((s, it) => s + Number(it.price) * Number(it.quantity), 0);
+
+  const saveEdit = async () => {
+    if (!editing) return;
+    setSavingEdit(true);
+    try {
+      const { data: u } = await supabase.auth.getUser();
+      if (!u.user) throw new Error("Not signed in");
+      const { error: rErr } = await supabase.from("receipts").update({
+        merchant: editMerchant || "Unknown",
+        total_amount: editTotal,
+        purchased_at: new Date(editPurchasedAt).toISOString(),
+      }).eq("id", editing.id);
+      if (rErr) throw rErr;
+      const { error: dErr } = await supabase.from("receipt_items").delete().eq("receipt_id", editing.id);
+      if (dErr) throw dErr;
+      if (editItems.length) {
+        const rows = editItems.map(it => ({
+          receipt_id: editing.id,
+          user_id: u.user!.id,
+          name: it.name || "Item",
+          price: Number(it.price) || 0,
+          quantity: Number(it.quantity) || 1,
+          category: it.category as any,
+          is_essential: !!it.is_essential,
+        }));
+        const { error: iErr } = await supabase.from("receipt_items").insert(rows);
+        if (iErr) throw iErr;
+      }
+      toast.success("Updated");
+      setEditing(null);
+      load();
+    } catch (e: any) {
+      toast.error(e.message ?? "Failed to update");
+    } finally { setSavingEdit(false); }
   };
 
   const onPick = (f: File | null) => {
@@ -133,7 +201,10 @@ function Receipts() {
               </div>
               <div className="text-right">
                 <div className="font-bold">{fmtRM(r.total_amount)}</div>
-                <Button size="sm" variant="ghost" onClick={() => remove(r.id)}><Trash2 className="w-4 h-4" /></Button>
+                <div className="flex justify-end">
+                  <Button size="sm" variant="ghost" onClick={() => openEdit(r)}><Pencil className="w-4 h-4" /></Button>
+                  <Button size="sm" variant="ghost" onClick={() => remove(r.id)}><Trash2 className="w-4 h-4" /></Button>
+                </div>
               </div>
             </div>
             <div className="mt-3 grid sm:grid-cols-2 gap-1.5 min-w-0">
@@ -145,6 +216,79 @@ function Receipts() {
         ))}
           </div>
       </section>
+
+      <Dialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit receipt</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="grid sm:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label>Merchant</Label>
+                <Input value={editMerchant} onChange={e => setEditMerchant(e.target.value)} />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Date & time</Label>
+                <Input type="datetime-local" value={editPurchasedAt} onChange={e => setEditPurchasedAt(e.target.value)} />
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <h3 className="font-semibold text-sm">Items ({editItems.length})</h3>
+                <Button size="sm" variant="outline" onClick={addItem}><Plus className="w-4 h-4" /> Add item</Button>
+              </div>
+              {editItems.map((it, i) => (
+                <div key={i} className="rounded-lg border border-border p-3 space-y-3">
+                  <div className="grid grid-cols-12 gap-2 items-end">
+                    <div className="col-span-12 sm:col-span-5 space-y-1">
+                      <Label className="text-xs">Name</Label>
+                      <Input value={it.name} onChange={e => updateItem(i, { name: e.target.value })} />
+                    </div>
+                    <div className="col-span-4 sm:col-span-2 space-y-1">
+                      <Label className="text-xs">Price</Label>
+                      <Input type="number" step="0.01" value={it.price} onChange={e => updateItem(i, { price: Number(e.target.value) })} />
+                    </div>
+                    <div className="col-span-4 sm:col-span-2 space-y-1">
+                      <Label className="text-xs">Qty</Label>
+                      <Input type="number" step="1" min="1" value={it.quantity} onChange={e => updateItem(i, { quantity: Number(e.target.value) })} />
+                    </div>
+                    <div className="col-span-4 sm:col-span-2 space-y-1">
+                      <Label className="text-xs">Category</Label>
+                      <Select value={it.category} onValueChange={v => updateItem(i, { category: v })}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {CATEGORIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="col-span-12 sm:col-span-1 flex justify-end">
+                      <Button size="icon" variant="ghost" onClick={() => removeItem(i)}><Trash2 className="w-4 h-4" /></Button>
+                    </div>
+                  </div>
+                  <label className="flex items-center gap-2 text-sm">
+                    <Switch checked={it.is_essential} onCheckedChange={v => updateItem(i, { is_essential: v })} />
+                    <span>{it.is_essential ? "Essential" : "Non-essential"}</span>
+                  </label>
+                </div>
+              ))}
+              {!editItems.length && <p className="text-sm text-muted-foreground text-center py-4">No items.</p>}
+            </div>
+
+            <div className="flex items-center justify-between border-t border-border pt-3">
+              <span className="text-sm text-muted-foreground">Total</span>
+              <span className="text-xl font-bold">{fmtRM(editTotal)}</span>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditing(null)} disabled={savingEdit}>Cancel</Button>
+            <Button variant="hero" onClick={saveEdit} disabled={savingEdit}>
+              <Save className="w-4 h-4" /> {savingEdit ? "Saving…" : "Save changes"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
