@@ -35,7 +35,7 @@ function Signup() {
   return (
     <div className="min-h-screen grid md:grid-cols-2">
       <div className="hidden md:flex bg-gradient-hero text-primary-foreground p-12 flex-col justify-between">
-        <div className="flex items-center gap-2 font-bold"><Sparkles className="w-5 h-5 text-accent" /> SmartReceipt AI</div>
+        <div className="flex items-center gap-2 font-bold"><Sparkles className="w-5 h-5 text-accent" /> GX Smart Pocket</div>
         <div>
           <h2 className="text-3xl font-bold">Take control in 60 seconds.</h2>
           <p className="text-primary-foreground/70 mt-2 max-w-sm">Snap a receipt, see exactly where your RM goes, and start saving.</p>
