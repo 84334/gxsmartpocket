@@ -36,8 +36,8 @@ export function SavingsTree({ streak, goal }: Props) {
   return (
     <div className="relative w-full flex flex-col items-center select-none">
       <div className="relative w-full max-w-[320px] aspect-square">
-        <div className="absolute inset-0 rounded-2xl bg-[radial-gradient(circle_at_50%_70%,rgba(253,224,71,0.25),transparent_60%)]" />
-        <div className="absolute inset-0 rounded-2xl pointer-events-none animate-pulse-slow bg-[radial-gradient(circle_at_50%_55%,rgba(253,224,71,0.35),transparent_55%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_70%,rgba(253,224,71,0.25),transparent_60%)]" />
+        <div className="absolute inset-0 pointer-events-none animate-pulse-slow bg-[radial-gradient(circle_at_50%_55%,rgba(253,224,71,0.35),transparent_55%)]" />
         <img
           src={stage.img}
           alt={stage.label}
@@ -45,7 +45,7 @@ export function SavingsTree({ streak, goal }: Props) {
           className="relative z-10 w-full h-full object-contain drop-shadow-[0_0_30px_rgba(253,224,71,0.35)] tree-sway"
         />
         {/* Glimmering sparkles */}
-        <div className="absolute inset-0 z-20 pointer-events-none overflow-hidden rounded-2xl">
+        <div className="absolute inset-0 z-20 pointer-events-none overflow-hidden">
           {SPARKLES.map((s, i) => (
             <span
               key={i}
