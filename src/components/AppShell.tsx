@@ -29,7 +29,7 @@ export function AppShell() {
           </div>
           <div>
             <div className="font-bold tracking-tight">GX Smart Pocket</div>
-            <div className="text-xs text-sidebar-foreground/60">AI Finance Coach</div>
+            <div className="text-xs text-sidebar-foreground/60">Intelligent spending and auto savings</div>
           </div>
         </Link>
         {nav.map(n => {
