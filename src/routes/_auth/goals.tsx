@@ -178,7 +178,7 @@ function Goals() {
     const newVal = Math.max(0, v);
     const goal = list.find(g => g.id === id);
     if (goal?.completed_at) {
-      toast.error("This goal is completed — auto-save is off.");
+      toast.error("This pocket is completed — auto-save is off.");
       return;
     }
     const othersTotal = list
@@ -187,7 +187,7 @@ function Goals() {
     if (othersTotal + newVal > dailyLimit) {
       const remaining = Math.max(0, dailyLimit - othersTotal);
       toast.error(
-        `Total auto-save (${fmtRM(othersTotal + newVal)}) exceeds your daily limit of ${fmtRM(dailyLimit)}. Max for this goal: ${fmtRM(remaining)}.`
+        `Total auto-save (${fmtRM(othersTotal + newVal)}) exceeds your daily limit of ${fmtRM(dailyLimit)}. Max for this pocket: ${fmtRM(remaining)}.`
       );
       load();
       return;
@@ -216,10 +216,10 @@ function Goals() {
     await supabase.from("savings_goals").delete().eq("id", deleteGoal.id);
     if (amt > 0) {
       if (deleteTarget === "balance") toast.success(`${fmtRM(amt)} returned to your available balance`);
-      else if (deleteTarget === "discard") toast.success("Goal deleted");
-      else toast.success(`${fmtRM(amt)} moved to another goal`);
+      else if (deleteTarget === "discard") toast.success("Pocket deleted");
+      else toast.success(`${fmtRM(amt)} moved to another pocket`);
     } else {
-      toast.success("Goal deleted");
+      toast.success("Pocket deleted");
     }
     setDeleteGoal(null);
     window.dispatchEvent(new Event("smartreceipt:balance-updated"));
@@ -485,7 +485,7 @@ function Goals() {
         </div>
       ) : (
         <Card className="p-10 text-center text-muted-foreground">
-          No goals yet. Tap <strong>New goal</strong> to start saving.
+          No pockets yet. Tap <strong>New pocket</strong> to start saving.
         </Card>
       )}
 
@@ -531,7 +531,7 @@ function Goals() {
               <AlertTriangle className="w-5 h-5 text-warning" /> Withdraw from {withdrawGoal?.title}?
             </AlertDialogTitle>
             <AlertDialogDescription>
-              This will set your goal progress back. A 10-second cooldown applies.
+              This will set your pocket progress back. A 10-second cooldown applies.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <div className="space-y-2">
@@ -551,13 +551,13 @@ function Goals() {
       <Dialog open={!!celebrateGoal} onOpenChange={o => !o && setCelebrateGoal(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle className="text-2xl">🎉 Goal achieved!</DialogTitle>
+            <DialogTitle className="text-2xl">🎉 Pocket filled!</DialogTitle>
           </DialogHeader>
           <div className="text-center py-4 space-y-2">
             <div className="text-5xl">🏆</div>
             <div className="font-semibold text-lg">{celebrateGoal?.title}</div>
             <div className="text-sm text-muted-foreground">
-              You saved <span className="text-foreground font-semibold">{fmtRM(celebrateGoal?.current_amount || 0)}</span>. Auto-save for this goal has stopped.
+              You saved <span className="text-foreground font-semibold">{fmtRM(celebrateGoal?.current_amount || 0)}</span>. Auto-save for this pocket has stopped.
             </div>
             <div className="text-sm text-muted-foreground pt-2">What would you like to do next?</div>
           </div>
@@ -583,8 +583,8 @@ function Goals() {
             </AlertDialogTitle>
             <AlertDialogDescription>
               {Number(deleteGoal?.current_amount || 0) > 0
-                ? `This goal has ${fmtRM(deleteGoal?.current_amount || 0)} saved. Where should it go?`
-                : "This goal has no savings. It will be permanently deleted."}
+                ? `This pocket has ${fmtRM(deleteGoal?.current_amount || 0)} saved. Where should it go?`
+                : "This pocket has no savings. It will be permanently deleted."}
             </AlertDialogDescription>
           </AlertDialogHeader>
           {Number(deleteGoal?.current_amount || 0) > 0 && (
@@ -604,7 +604,7 @@ function Goals() {
           )}
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmRemove}>Delete goal</AlertDialogAction>
+            <AlertDialogAction onClick={confirmRemove}>Delete pocket</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
