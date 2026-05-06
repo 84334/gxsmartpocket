@@ -96,23 +96,14 @@ export function TreeHowItWorks() {
           <DialogTitle>Your savings tree</DialogTitle>
         </DialogHeader>
 
-        {/* Stacked cards */}
+        {/* Single card, swap on click */}
         <div className="relative h-72 select-none" onClick={next}>
           {SLIDES.map((s, idx) => {
-            const offset = (idx - i + SLIDES.length) % SLIDES.length;
-            const isTop = offset === 0;
-            const visible = offset < 3;
-            if (!visible) return null;
+            if (idx !== i) return null;
             return (
               <div
                 key={idx}
-                className={`absolute inset-0 rounded-2xl border border-border/60 bg-gradient-to-br ${s.bg} p-5 flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-300 ease-out shadow-soft`}
-                style={{
-                  transform: `translateY(${offset * 10}px) scale(${1 - offset * 0.04})`,
-                  zIndex: SLIDES.length - offset,
-                  opacity: isTop ? 1 : 0.6,
-                  pointerEvents: isTop ? "auto" : "none",
-                }}
+                className={`absolute inset-0 rounded-2xl border border-border/60 bg-gradient-to-br ${s.bg} p-5 flex flex-col items-center justify-center text-center cursor-pointer shadow-soft animate-fade-in`}
               >
                 <div className="flex-1 flex items-center justify-center w-full">{s.art}</div>
                 <div className="font-semibold text-base mt-2">{s.title}</div>
