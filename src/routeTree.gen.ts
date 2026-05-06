@@ -14,6 +14,7 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as AuthRouteImport } from './routes/_auth'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthUploadRouteImport } from './routes/_auth/upload'
+import { Route as AuthTreePreviewRouteImport } from './routes/_auth/tree-preview'
 import { Route as AuthReviewRouteImport } from './routes/_auth/review'
 import { Route as AuthReceiptsRouteImport } from './routes/_auth/receipts'
 import { Route as AuthOnboardingRouteImport } from './routes/_auth/onboarding'
@@ -43,6 +44,11 @@ const IndexRoute = IndexRouteImport.update({
 const AuthUploadRoute = AuthUploadRouteImport.update({
   id: '/upload',
   path: '/upload',
+  getParentRoute: () => AuthRoute,
+} as any)
+const AuthTreePreviewRoute = AuthTreePreviewRouteImport.update({
+  id: '/tree-preview',
+  path: '/tree-preview',
   getParentRoute: () => AuthRoute,
 } as any)
 const AuthReviewRoute = AuthReviewRouteImport.update({
@@ -86,6 +92,7 @@ export interface FileRoutesByFullPath {
   '/onboarding': typeof AuthOnboardingRoute
   '/receipts': typeof AuthReceiptsRoute
   '/review': typeof AuthReviewRoute
+  '/tree-preview': typeof AuthTreePreviewRoute
   '/upload': typeof AuthUploadRoute
 }
 export interface FileRoutesByTo {
@@ -98,6 +105,7 @@ export interface FileRoutesByTo {
   '/onboarding': typeof AuthOnboardingRoute
   '/receipts': typeof AuthReceiptsRoute
   '/review': typeof AuthReviewRoute
+  '/tree-preview': typeof AuthTreePreviewRoute
   '/upload': typeof AuthUploadRoute
 }
 export interface FileRoutesById {
@@ -112,6 +120,7 @@ export interface FileRoutesById {
   '/_auth/onboarding': typeof AuthOnboardingRoute
   '/_auth/receipts': typeof AuthReceiptsRoute
   '/_auth/review': typeof AuthReviewRoute
+  '/_auth/tree-preview': typeof AuthTreePreviewRoute
   '/_auth/upload': typeof AuthUploadRoute
 }
 export interface FileRouteTypes {
@@ -126,6 +135,7 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/receipts'
     | '/review'
+    | '/tree-preview'
     | '/upload'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -138,6 +148,7 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/receipts'
     | '/review'
+    | '/tree-preview'
     | '/upload'
   id:
     | '__root__'
@@ -151,6 +162,7 @@ export interface FileRouteTypes {
     | '/_auth/onboarding'
     | '/_auth/receipts'
     | '/_auth/review'
+    | '/_auth/tree-preview'
     | '/_auth/upload'
   fileRoutesById: FileRoutesById
 }
@@ -196,6 +208,13 @@ declare module '@tanstack/react-router' {
       path: '/upload'
       fullPath: '/upload'
       preLoaderRoute: typeof AuthUploadRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_auth/tree-preview': {
+      id: '/_auth/tree-preview'
+      path: '/tree-preview'
+      fullPath: '/tree-preview'
+      preLoaderRoute: typeof AuthTreePreviewRouteImport
       parentRoute: typeof AuthRoute
     }
     '/_auth/review': {
@@ -250,6 +269,7 @@ interface AuthRouteChildren {
   AuthOnboardingRoute: typeof AuthOnboardingRoute
   AuthReceiptsRoute: typeof AuthReceiptsRoute
   AuthReviewRoute: typeof AuthReviewRoute
+  AuthTreePreviewRoute: typeof AuthTreePreviewRoute
   AuthUploadRoute: typeof AuthUploadRoute
 }
 
@@ -260,6 +280,7 @@ const AuthRouteChildren: AuthRouteChildren = {
   AuthOnboardingRoute: AuthOnboardingRoute,
   AuthReceiptsRoute: AuthReceiptsRoute,
   AuthReviewRoute: AuthReviewRoute,
+  AuthTreePreviewRoute: AuthTreePreviewRoute,
   AuthUploadRoute: AuthUploadRoute,
 }
 
