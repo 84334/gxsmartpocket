@@ -94,24 +94,68 @@ export function TreeWeather({ mood }: { mood: Mood }) {
       {/* Cute critters for happy */}
       {mood === "happy" && (
         <>
-          <img
-            src={bunnyImg}
-            alt=""
-            className="absolute w-12 h-12 object-contain"
-            style={{ bottom: "8%", left: "6%", animation: "hop 2.4s ease-in-out infinite" }}
-          />
-          <img
-            src={butterflyImg}
-            alt=""
-            className="absolute w-8 h-8 object-contain"
-            style={{ top: "30%", left: "10%", animation: "fly 6s linear infinite" }}
-          />
-          <img
-            src={birdImg}
-            alt=""
-            className="absolute w-10 h-10 object-contain"
-            style={{ top: "14%", right: "16%", animation: "fly-r 7s linear infinite" }}
-          />
+          {/* Bunny — jumps around the tree root */}
+          <div
+            className="absolute"
+            style={{
+              bottom: "6%",
+              left: "50%",
+              width: 56,
+              height: 56,
+              marginLeft: -28,
+              transformStyle: "preserve-3d",
+              animation: "bunny-orbit 6s linear infinite",
+            }}
+          >
+            <img
+              src={bunnyImg}
+              alt=""
+              className="w-full h-full object-contain drop-shadow-lg"
+              style={{ animation: "bunny-hop 0.9s ease-in-out infinite, spin-y 6s linear infinite" }}
+            />
+          </div>
+
+          {/* Bird — flies to the branches */}
+          <div
+            className="absolute"
+            style={{
+              top: "28%",
+              left: "50%",
+              width: 44,
+              height: 44,
+              marginLeft: -22,
+              transformStyle: "preserve-3d",
+              animation: "bird-orbit 7s linear infinite",
+            }}
+          >
+            <img
+              src={birdImg}
+              alt=""
+              className="w-full h-full object-contain drop-shadow-md"
+              style={{ animation: "bird-bob 1.1s ease-in-out infinite, spin-y 7s linear infinite reverse" }}
+            />
+          </div>
+
+          {/* Butterfly — orbits the leaves */}
+          <div
+            className="absolute"
+            style={{
+              top: "18%",
+              left: "50%",
+              width: 32,
+              height: 32,
+              marginLeft: -16,
+              transformStyle: "preserve-3d",
+              animation: "butterfly-orbit 5s linear infinite",
+            }}
+          >
+            <img
+              src={butterflyImg}
+              alt=""
+              className="w-full h-full object-contain"
+              style={{ animation: "butterfly-flap 0.4s ease-in-out infinite, spin-y 5s linear infinite" }}
+            />
+          </div>
         </>
       )}
 
@@ -134,19 +178,47 @@ export function TreeWeather({ mood }: { mood: Mood }) {
           0%, 100% { transform: scale(1); filter: brightness(1); }
           50% { transform: scale(1.08); filter: brightness(1.15); }
         }
-        @keyframes hop {
+        /* Orbits around the tree (elliptical, with depth via scale) */
+        @keyframes bunny-orbit {
+          0%   { transform: translate3d(90px, 0, 0) scale(1); z-index: 5; }
+          25%  { transform: translate3d(0, 6px, 0) scale(1.15); z-index: 6; }
+          50%  { transform: translate3d(-90px, 0, 0) scale(1); z-index: 5; }
+          75%  { transform: translate3d(0, -6px, 0) scale(0.7); z-index: 1; }
+          100% { transform: translate3d(90px, 0, 0) scale(1); z-index: 5; }
+        }
+        @keyframes bunny-hop {
           0%, 100% { transform: translateY(0); }
-          50% { transform: translateY(-10px); }
+          50%      { transform: translateY(-14px); }
         }
-        @keyframes fly {
-          0% { transform: translate(0,0) rotate(-5deg); }
-          50% { transform: translate(120px,-20px) rotate(5deg); }
-          100% { transform: translate(0,0) rotate(-5deg); }
+        @keyframes bird-orbit {
+          0%   { transform: translate3d(110px, -10px, 0) scale(1); z-index: 6; }
+          25%  { transform: translate3d(0, 10px, 0) scale(1.1); z-index: 6; }
+          50%  { transform: translate3d(-110px, -10px, 0) scale(1); z-index: 6; }
+          75%  { transform: translate3d(0, -25px, 0) scale(0.7); z-index: 1; }
+          100% { transform: translate3d(110px, -10px, 0) scale(1); z-index: 6; }
         }
-        @keyframes fly-r {
-          0% { transform: translate(0,0); }
-          50% { transform: translate(-100px,15px); }
-          100% { transform: translate(0,0); }
+        @keyframes bird-bob {
+          0%, 100% { transform: translateY(0) rotate(-4deg); }
+          50%      { transform: translateY(-6px) rotate(4deg); }
+        }
+        @keyframes butterfly-orbit {
+          0%   { transform: translate3d(70px, 0, 0) scale(1); z-index: 6; }
+          25%  { transform: translate3d(0, 25px, 0) scale(1.2); z-index: 6; }
+          50%  { transform: translate3d(-70px, 0, 0) scale(1); z-index: 6; }
+          75%  { transform: translate3d(0, -25px, 0) scale(0.65); z-index: 1; }
+          100% { transform: translate3d(70px, 0, 0) scale(1); z-index: 6; }
+        }
+        @keyframes butterfly-flap {
+          0%, 100% { transform: scaleX(1) rotate(-6deg); }
+          50%      { transform: scaleX(0.5) rotate(6deg); }
+        }
+        /* 3D-style Y-axis rotation so the sprite faces forward/away */
+        @keyframes spin-y {
+          0%   { filter: brightness(1); }
+          25%  { filter: brightness(0.85); }
+          50%  { filter: brightness(0.7); }
+          75%  { filter: brightness(0.85); }
+          100% { filter: brightness(1); }
         }
       `}</style>
     </div>
