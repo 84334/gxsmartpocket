@@ -42,7 +42,7 @@ export function SavingsTree({ streak, goal }: Props) {
           src={stage.img}
           alt={stage.label}
           loading="lazy"
-          className="relative z-10 w-full h-full object-contain drop-shadow-[0_0_30px_rgba(253,224,71,0.35)] tree-sway"
+          className="relative z-10 w-full h-full object-contain drop-shadow-[0_0_30px_rgba(253,224,71,0.35)] tree-sway mix-blend-screen"
         />
         {/* Glimmering sparkles */}
         <div className="absolute inset-0 z-20 pointer-events-none overflow-hidden">
