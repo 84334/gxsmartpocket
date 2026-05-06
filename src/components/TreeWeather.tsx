@@ -133,7 +133,7 @@ export function TreeWeather({ mood }: { mood: Mood }) {
               width: 96,
               height: 96,
               left: 0,
-              animation: "roam-x 12s ease-in-out infinite",
+              animation: "roam-x 16s linear infinite",
             }}
           >
             <DotLottieReact
