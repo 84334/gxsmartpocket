@@ -9,12 +9,12 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as TreePreviewRouteImport } from './routes/tree-preview'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AuthRouteImport } from './routes/_auth'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthUploadRouteImport } from './routes/_auth/upload'
-import { Route as AuthTreePreviewRouteImport } from './routes/_auth/tree-preview'
 import { Route as AuthReviewRouteImport } from './routes/_auth/review'
 import { Route as AuthReceiptsRouteImport } from './routes/_auth/receipts'
 import { Route as AuthOnboardingRouteImport } from './routes/_auth/onboarding'
@@ -22,6 +22,11 @@ import { Route as AuthGoalsRouteImport } from './routes/_auth/goals'
 import { Route as AuthExpensesRouteImport } from './routes/_auth/expenses'
 import { Route as AuthDashboardRouteImport } from './routes/_auth/dashboard'
 
+const TreePreviewRoute = TreePreviewRouteImport.update({
+  id: '/tree-preview',
+  path: '/tree-preview',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
   path: '/signup',
@@ -44,11 +49,6 @@ const IndexRoute = IndexRouteImport.update({
 const AuthUploadRoute = AuthUploadRouteImport.update({
   id: '/upload',
   path: '/upload',
-  getParentRoute: () => AuthRoute,
-} as any)
-const AuthTreePreviewRoute = AuthTreePreviewRouteImport.update({
-  id: '/tree-preview',
-  path: '/tree-preview',
   getParentRoute: () => AuthRoute,
 } as any)
 const AuthReviewRoute = AuthReviewRouteImport.update({
@@ -86,26 +86,26 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
+  '/tree-preview': typeof TreePreviewRoute
   '/dashboard': typeof AuthDashboardRoute
   '/expenses': typeof AuthExpensesRoute
   '/goals': typeof AuthGoalsRoute
   '/onboarding': typeof AuthOnboardingRoute
   '/receipts': typeof AuthReceiptsRoute
   '/review': typeof AuthReviewRoute
-  '/tree-preview': typeof AuthTreePreviewRoute
   '/upload': typeof AuthUploadRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
+  '/tree-preview': typeof TreePreviewRoute
   '/dashboard': typeof AuthDashboardRoute
   '/expenses': typeof AuthExpensesRoute
   '/goals': typeof AuthGoalsRoute
   '/onboarding': typeof AuthOnboardingRoute
   '/receipts': typeof AuthReceiptsRoute
   '/review': typeof AuthReviewRoute
-  '/tree-preview': typeof AuthTreePreviewRoute
   '/upload': typeof AuthUploadRoute
 }
 export interface FileRoutesById {
@@ -114,13 +114,13 @@ export interface FileRoutesById {
   '/_auth': typeof AuthRouteWithChildren
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
+  '/tree-preview': typeof TreePreviewRoute
   '/_auth/dashboard': typeof AuthDashboardRoute
   '/_auth/expenses': typeof AuthExpensesRoute
   '/_auth/goals': typeof AuthGoalsRoute
   '/_auth/onboarding': typeof AuthOnboardingRoute
   '/_auth/receipts': typeof AuthReceiptsRoute
   '/_auth/review': typeof AuthReviewRoute
-  '/_auth/tree-preview': typeof AuthTreePreviewRoute
   '/_auth/upload': typeof AuthUploadRoute
 }
 export interface FileRouteTypes {
@@ -129,26 +129,26 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/signup'
+    | '/tree-preview'
     | '/dashboard'
     | '/expenses'
     | '/goals'
     | '/onboarding'
     | '/receipts'
     | '/review'
-    | '/tree-preview'
     | '/upload'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/login'
     | '/signup'
+    | '/tree-preview'
     | '/dashboard'
     | '/expenses'
     | '/goals'
     | '/onboarding'
     | '/receipts'
     | '/review'
-    | '/tree-preview'
     | '/upload'
   id:
     | '__root__'
@@ -156,13 +156,13 @@ export interface FileRouteTypes {
     | '/_auth'
     | '/login'
     | '/signup'
+    | '/tree-preview'
     | '/_auth/dashboard'
     | '/_auth/expenses'
     | '/_auth/goals'
     | '/_auth/onboarding'
     | '/_auth/receipts'
     | '/_auth/review'
-    | '/_auth/tree-preview'
     | '/_auth/upload'
   fileRoutesById: FileRoutesById
 }
@@ -171,10 +171,18 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRouteWithChildren
   LoginRoute: typeof LoginRoute
   SignupRoute: typeof SignupRoute
+  TreePreviewRoute: typeof TreePreviewRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/tree-preview': {
+      id: '/tree-preview'
+      path: '/tree-preview'
+      fullPath: '/tree-preview'
+      preLoaderRoute: typeof TreePreviewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/signup': {
       id: '/signup'
       path: '/signup'
@@ -208,13 +216,6 @@ declare module '@tanstack/react-router' {
       path: '/upload'
       fullPath: '/upload'
       preLoaderRoute: typeof AuthUploadRouteImport
-      parentRoute: typeof AuthRoute
-    }
-    '/_auth/tree-preview': {
-      id: '/_auth/tree-preview'
-      path: '/tree-preview'
-      fullPath: '/tree-preview'
-      preLoaderRoute: typeof AuthTreePreviewRouteImport
       parentRoute: typeof AuthRoute
     }
     '/_auth/review': {
@@ -269,7 +270,6 @@ interface AuthRouteChildren {
   AuthOnboardingRoute: typeof AuthOnboardingRoute
   AuthReceiptsRoute: typeof AuthReceiptsRoute
   AuthReviewRoute: typeof AuthReviewRoute
-  AuthTreePreviewRoute: typeof AuthTreePreviewRoute
   AuthUploadRoute: typeof AuthUploadRoute
 }
 
@@ -280,7 +280,6 @@ const AuthRouteChildren: AuthRouteChildren = {
   AuthOnboardingRoute: AuthOnboardingRoute,
   AuthReceiptsRoute: AuthReceiptsRoute,
   AuthReviewRoute: AuthReviewRoute,
-  AuthTreePreviewRoute: AuthTreePreviewRoute,
   AuthUploadRoute: AuthUploadRoute,
 }
 
@@ -291,6 +290,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRouteWithChildren,
   LoginRoute: LoginRoute,
   SignupRoute: SignupRoute,
+  TreePreviewRoute: TreePreviewRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -3,7 +3,7 @@ import { useState } from "react";
 import { DotLottieReact } from "@lottiefiles/dotlottie-react";
 import { SavingsTree } from "@/components/SavingsTree";
 
-export const Route = createFileRoute("/_auth/tree-preview")({
+export const Route = createFileRoute("/tree-preview")({
   component: TreePreview,
 });
 
