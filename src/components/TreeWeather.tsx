@@ -122,22 +122,26 @@ export function TreeWeather({ mood }: { mood: Mood }) {
 
       {mood === "happy" && isRoamer && (
         <div
-          className="absolute"
-          style={{
-            bottom: "4%",
-            left: 0,
-            width: 96,
-            height: 96,
-            animation: "roam-x 8s ease-in-out infinite",
-          }}
+          className="absolute left-0 right-0"
+          style={{ bottom: "4%", height: 96 }}
         >
-          <DotLottieReact
-            src={dailyAnimal.src}
-            loop
-            autoplay
-            backgroundColor="transparent"
-            style={{ width: "100%", height: "100%", imageRendering: "auto" }}
-          />
+          <div
+            className="absolute"
+            style={{
+              width: 96,
+              height: 96,
+              left: 0,
+              animation: "roam-x 10s ease-in-out infinite",
+            }}
+          >
+            <DotLottieReact
+              src={dailyAnimal.src}
+              loop
+              autoplay
+              backgroundColor="transparent"
+              style={{ width: "100%", height: "100%", imageRendering: "auto" }}
+            />
+          </div>
         </div>
       )}
 
@@ -161,11 +165,11 @@ export function TreeWeather({ mood }: { mood: Mood }) {
           50% { transform: scale(1.08); filter: brightness(1.15); }
         }
         @keyframes roam-x {
-          0%   { transform: translateX(0) scaleX(1); }
-          49%  { transform: translateX(calc(100% * 2.5)) scaleX(1); }
-          50%  { transform: translateX(calc(100% * 2.5)) scaleX(-1); }
-          99%  { transform: translateX(0) scaleX(-1); }
-          100% { transform: translateX(0) scaleX(1); }
+          0%   { left: 0;                  transform: scaleX(1); }
+          49%  { left: calc(100% - 96px);  transform: scaleX(1); }
+          50%  { left: calc(100% - 96px);  transform: scaleX(-1); }
+          99%  { left: 0;                  transform: scaleX(-1); }
+          100% { left: 0;                  transform: scaleX(1); }
         }
         /* Orbits around the tree (elliptical, with depth via scale) */
         @keyframes bunny-orbit {
