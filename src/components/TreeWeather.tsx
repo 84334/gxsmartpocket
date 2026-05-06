@@ -11,6 +11,19 @@ type Mood = "happy" | "calm" | "rain" | "storm";
  * - storm: heavy rain + lightning flashes
  */
 export function TreeWeather({ mood }: { mood: Mood }) {
+  const dailyAnimal = useMemo(() => {
+    const animals = [
+      "https://lottie.host/a18d0288-e456-43ee-82eb-530ce94f92d7/vwo2LRo1Vy.lottie", // cat
+      "https://lottie.host/5e3ddc60-a850-4dcd-b3de-92d2717c46d0/0AKsO4nLMP.lottie", // rabbit
+      "https://lottie.host/1949e66d-ac5a-47ad-95ba-3d2eaf21fd64/KDBMuHQAcz.lottie", // bird
+      "https://lottie.host/e0411131-bee9-48ed-ad84-51088d058024/Lu3fpl1lF6.lottie", // butterfly
+      "https://lottie.host/a089a439-4f68-48c0-9309-ae2de50ddc06/BJeo9SM9Iu.lottie", // fox
+    ];
+    const d = new Date();
+    const dayKey = d.getFullYear() * 1000 + (d.getMonth() + 1) * 50 + d.getDate();
+    return animals[dayKey % animals.length];
+  }, []);
+
   const drops = useMemo(() => {
     const count = mood === "storm" ? 50 : mood === "rain" ? 28 : 0;
     return Array.from({ length: count }, (_, i) => ({
@@ -93,14 +106,14 @@ export function TreeWeather({ mood }: { mood: Mood }) {
       {mood === "happy" && (
         <div
           className="absolute"
-          style={{ bottom: "10%", right: "8%", width: 70, height: 70 }}
+          style={{ bottom: "6%", right: "6%", width: 96, height: 96 }}
         >
           <DotLottieReact
-            src="https://lottie.host/14627f1a-7381-464d-9f06-88abddaf6844/BVHucobYXe.lottie"
+            src={dailyAnimal}
             loop
             autoplay
             backgroundColor="transparent"
-            style={{ width: "100%", height: "100%" }}
+            style={{ width: "100%", height: "100%", imageRendering: "auto" }}
           />
         </div>
       )}
