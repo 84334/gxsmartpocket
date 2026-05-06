@@ -380,10 +380,10 @@ function Goals() {
           <DialogContent>
             <DialogHeader><DialogTitle>Create a new goal</DialogTitle></DialogHeader>
             <div className="space-y-3">
-              <div><Label className="text-xs">What for?</Label><Input placeholder="Trip to Korea" value={title} onChange={e => setTitle(e.target.value)} /></div>
+              <div><Label className="text-xs">What for?</Label><Input placeholder="Trip to Korea" className="bg-background border-border/80 placeholder:text-muted-foreground/60" value={title} onChange={e => setTitle(e.target.value)} /></div>
               <div className="grid grid-cols-2 gap-2">
-                <div><Label className="text-xs">Target (RM)</Label><Input type="number" value={target} onChange={e => setTarget(e.target.value)} /></div>
-                <div><Label className="text-xs">By date (optional)</Label><Input type="date" value={date} onChange={e => setDate(e.target.value)} /></div>
+                <div><Label className="text-xs">Target (RM)</Label><Input type="number" placeholder="e.g. 1000" className="bg-background border-border/80 placeholder:text-muted-foreground/60" value={target} onChange={e => setTarget(e.target.value)} /></div>
+                <div><Label className="text-xs">By date (optional)</Label><Input type="date" className="bg-background border-border/80" value={date} onChange={e => setDate(e.target.value)} /></div>
               </div>
             </div>
             <DialogFooter>
@@ -446,7 +446,7 @@ function Goals() {
                   </div>
                   <div className="flex-1">
                     <Label className="text-[10px] text-muted-foreground">Save Extra (RM)</Label>
-                    <Input id={`save-${g.id}`} type="number" className="h-8" placeholder="0.00" />
+                    <Input id={`save-${g.id}`} type="number" className="h-8 bg-background border-border/80 placeholder:text-muted-foreground/60" placeholder="0.00" />
                   </div>
                   <Button
                     size="sm"
