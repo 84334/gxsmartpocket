@@ -37,7 +37,6 @@ export function SavingsTree({ streak, goal }: Props) {
     <div className="relative w-full flex flex-col items-center select-none">
       <div className="relative w-full max-w-[320px] aspect-square">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_70%,rgba(253,224,71,0.25),transparent_60%)]" />
-        <div className="absolute inset-0 pointer-events-none animate-pulse-slow bg-[radial-gradient(circle_at_50%_55%,rgba(253,224,71,0.35),transparent_55%)]" />
         <img
           src={stage.img}
           alt={stage.label}
@@ -62,16 +61,6 @@ export function SavingsTree({ streak, goal }: Props) {
               }}
             />
           ))}
-          {/* Diagonal shimmer sweep */}
-          <div
-            className="absolute -inset-1/2 opacity-60"
-            style={{
-              background:
-                "linear-gradient(115deg, transparent 35%, rgba(255,243,170,0.25) 48%, rgba(253,224,71,0.55) 50%, rgba(255,243,170,0.25) 52%, transparent 65%)",
-              animation: "tree-shimmer 4.5s linear infinite",
-              mixBlendMode: "screen",
-            }}
-          />
         </div>
       </div>
       <div className="text-center mt-2">
@@ -85,15 +74,6 @@ export function SavingsTree({ streak, goal }: Props) {
           0%, 100% { opacity: 0; transform: scale(0.4); }
           50%      { opacity: 1; transform: scale(1.2); }
         }
-        @keyframes tree-shimmer {
-          0%   { transform: translateX(-60%) translateY(-10%); }
-          100% { transform: translateX(60%) translateY(10%); }
-        }
-        @keyframes pulse-slow {
-          0%, 100% { opacity: 0.55; }
-          50%      { opacity: 1; }
-        }
-        .animate-pulse-slow { animation: pulse-slow 3.5s ease-in-out infinite; }
       `}</style>
     </div>
   );
