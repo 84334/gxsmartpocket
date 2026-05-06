@@ -30,14 +30,18 @@ export const Route = createRootRoute({
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
+      { title: "GX Smart Pocket" },
+      { name: "description", content: "GX Smart Pocket analyzes spending from receipt photos, offering AI-driven financial insights and savings goals." },
       { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
+      { property: "og:title", content: "GX Smart Pocket" },
+      { property: "og:description", content: "GX Smart Pocket analyzes spending from receipt photos, offering AI-driven financial insights and savings goals." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "twitter:site", content: "@Lovable" },
+      { name: "twitter:title", content: "GX Smart Pocket" },
+      { name: "twitter:description", content: "GX Smart Pocket analyzes spending from receipt photos, offering AI-driven financial insights and savings goals." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/de807974-9510-47fd-893b-e69d0b4a1b80/id-preview-2cbd7122--650d9f50-e132-44fe-a726-d3d7a1472289.lovable.app-1778080987758.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/de807974-9510-47fd-893b-e69d0b4a1b80/id-preview-2cbd7122--650d9f50-e132-44fe-a726-d3d7a1472289.lovable.app-1778080987758.png" },
     ],
     links: [
       {
