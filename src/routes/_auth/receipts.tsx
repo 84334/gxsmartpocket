@@ -118,14 +118,14 @@ function Receipts() {
             </div>
             <div className="mt-3 grid sm:grid-cols-2 gap-1.5">
               {r.receipt_items?.map((it: any) => (
-                <div key={it.id} className="text-sm flex items-center justify-between gap-2 px-2 py-1 rounded-md bg-muted/50">
-                  <span className="truncate flex items-center gap-2">
-                    <span className={`w-1.5 h-1.5 rounded-full ${it.is_essential ? "bg-success" : "bg-warning"}`} />
-                    {it.name}
-                    <span className="text-xs text-muted-foreground">· {it.category}</span>
-                  </span>
-                  <span>{fmtRM(Number(it.price) * Number(it.quantity))}</span>
-                </div>
+                 <div key={it.id} className="text-sm flex items-center justify-between gap-2 px-2 py-1 rounded-md bg-muted/50">
+                   <span className="min-w-0 flex items-center gap-2">
+                     <span className={`w-2 h-2 rounded-full shrink-0 ${it.is_essential ? "bg-success" : "bg-warning"}`} />
+                     <span className="truncate">{it.name}</span>
+                     <span className="text-xs text-muted-foreground shrink-0">· {it.category}</span>
+                   </span>
+                   <span className="shrink-0">{fmtRM(Number(it.price) * Number(it.quantity))}</span>
+                 </div>
               ))}
             </div>
           </Card>
