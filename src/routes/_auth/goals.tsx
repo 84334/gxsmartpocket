@@ -334,6 +334,9 @@ function Goals() {
             <p className="text-xs text-muted-foreground mt-1">
               Auto-save kicks in only when you stay under this. Today: <span className="text-foreground font-medium">{fmtRM(todaySpend)}</span> of {fmtRM(dailyLimit)}
             </p>
+            <p className="text-[11px] text-muted-foreground mt-1">
+              ⏰ Auto-save runs daily at <span className="font-medium text-foreground">11:59 PM</span>. Limit resets at <span className="font-medium text-foreground">12:00 AM</span>.
+            </p>
             <Progress value={Math.min(100, (todaySpend / Math.max(1, dailyLimit)) * 100)} className="mt-3 w-64 max-w-full" />
           </div>
           <div className="flex items-end gap-2">
