@@ -15,7 +15,7 @@ function Index() {
           <div className="w-9 h-9 rounded-xl bg-gradient-mint flex items-center justify-center shadow-glow">
             <Sparkles className="w-5 h-5 text-primary" />
           </div>
-          SmartReceipt AI
+          GX Smart Pocket
         </div>
         <div className="flex gap-2">
           <Link to="/login"><Button variant="ghost" className="text-primary-foreground hover:bg-white/10">Sign in</Button></Link>
@@ -31,12 +31,8 @@ function Index() {
           Snap a receipt. <span className="text-accent">Master your money.</span>
         </h1>
         <p className="mt-6 text-lg text-primary-foreground/80 max-w-2xl mx-auto">
-          SmartReceipt AI reads your receipts, spots wasteful spending, and coaches you toward your savings goals — automatically.
+          GX Smart Pocket reads your receipts, spots wasteful spending, and coaches you toward your savings goals — automatically.
         </p>
-        <div className="mt-8 flex gap-3 justify-center">
-          <Link to="/signup"><Button variant="hero" size="lg">Start free →</Button></Link>
-          <Link to="/login"><Button size="lg" variant="ghost" className="text-primary-foreground hover:bg-white/10">I have an account</Button></Link>
-        </div>
       </section>
 
       <section className="max-w-6xl mx-auto px-6 pb-24 grid md:grid-cols-4 gap-4">
