@@ -168,9 +168,9 @@ export function TreeWeather({ mood }: { mood: Mood }) {
         }
         @keyframes roam-x {
           0%   { left: 0;                  transform: scaleX(1); }
-          42%  { left: calc(100% - 96px);  transform: scaleX(1); }
+          49%  { left: calc(100% - 96px);  transform: scaleX(1); }
           50%  { left: calc(100% - 96px);  transform: scaleX(-1); }
-          96%  { left: 0;                  transform: scaleX(-1); }
+          99%  { left: 0;                  transform: scaleX(-1); }
           100% { left: 0;                  transform: scaleX(1); }
         }
         /* Orbits around the tree (elliptical, with depth via scale) */
