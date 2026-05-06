@@ -28,7 +28,7 @@ export function AppShell() {
             <Sparkles className="w-5 h-5 text-primary" />
           </div>
           <div>
-            <div className="font-bold tracking-tight">SmartReceipt</div>
+            <div className="font-bold tracking-tight">GX Smart Pocket</div>
             <div className="text-xs text-sidebar-foreground/60">AI Finance Coach</div>
           </div>
         </Link>
@@ -52,7 +52,7 @@ export function AppShell() {
       <div className="flex-1 flex flex-col min-w-0 md:ml-64">
         <header className="md:hidden bg-sidebar text-sidebar-foreground px-4 py-3 flex items-center justify-between">
           <Link to="/dashboard" className="flex items-center gap-2 font-bold">
-            <Sparkles className="w-5 h-5 text-accent" /> SmartReceipt
+            <Sparkles className="w-5 h-5 text-accent" /> GX Smart Pocket
           </Link>
           <Button size="sm" variant="ghost" className="text-sidebar-foreground" onClick={signOut}><LogOut className="w-4 h-4" /></Button>
         </header>
