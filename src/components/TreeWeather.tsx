@@ -91,7 +91,10 @@ export function TreeWeather({ mood }: { mood: Mood }) {
 
       {/* Cute critters for happy */}
       {mood === "happy" && (
-        <div className="absolute inset-0">
+        <div
+          className="absolute left-1/2 -translate-x-1/2"
+          style={{ bottom: "2%", width: 80, height: 80 }}
+        >
           <DotLottieReact
             src="https://lottie.host/14627f1a-7381-464d-9f06-88abddaf6844/BVHucobYXe.lottie"
             loop
