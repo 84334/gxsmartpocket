@@ -9,6 +9,26 @@ import { toast } from "sonner";
 
 export const Route = createFileRoute("/_auth/receipts")({ component: Receipts });
 
+function ReceiptItemRow({ item }: { item: any }) {
+  const [expanded, setExpanded] = useState(false);
+  return (
+    <button
+      type="button"
+      onClick={() => setExpanded(v => !v)}
+      className="text-left text-sm flex items-start justify-between gap-2 px-2 py-1 rounded-md bg-muted/50 min-w-0 w-full"
+    >
+      <span className="min-w-0 flex items-start gap-2 flex-1">
+        <span className={`w-2 h-2 mt-1.5 rounded-full shrink-0 ${item.is_essential ? "bg-success" : "bg-warning"}`} />
+        <span className="min-w-0 flex-1">
+          <span className={expanded ? "break-words" : "truncate block"}>{item.name}</span>
+          <span className="text-xs text-muted-foreground"> · {item.category}</span>
+        </span>
+      </span>
+      <span className="shrink-0 tabular-nums">{fmtRM(Number(item.price) * Number(item.quantity))}</span>
+    </button>
+  );
+}
+
 function Receipts() {
   const navigate = useNavigate();
   const [list, setList] = useState<any[]>([]);
