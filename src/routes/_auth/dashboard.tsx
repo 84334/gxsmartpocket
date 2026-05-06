@@ -10,7 +10,7 @@ import { toast } from "sonner";
 
 export const Route = createFileRoute("/_auth/dashboard")({ component: Dashboard });
 
-const COLORS = ["oklch(0.22 0.06 255)","oklch(0.72 0.16 175)","oklch(0.78 0.16 75)","oklch(0.65 0.2 25)","oklch(0.55 0.18 290)","oklch(0.5 0.05 250)"];
+const COLORS = ["oklch(0.7 0.18 290)","oklch(0.72 0.16 175)","oklch(0.78 0.16 75)","oklch(0.65 0.2 25)","oklch(0.6 0.18 220)","oklch(0.7 0.14 340)"];
 
 const EXPENSE_STYLES: { match: RegExp; icon: any; tint: string; fg: string }[] = [
   { match: /rent|home|house|mortgage|apartment/i, icon: Home, tint: "bg-violet-500/10", fg: "text-violet-500" },
