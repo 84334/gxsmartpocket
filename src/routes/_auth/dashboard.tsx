@@ -164,17 +164,31 @@ function Dashboard() {
         </Card>
 
         <Card className="p-5 rounded-2xl border-border/60 shadow-soft">
-          <h3 className="font-semibold text-sm mb-3">Last 7 days</h3>
-          {trend.length ? (
-            <div className="h-48"><ResponsiveContainer>
-              <BarChart data={trend}>
-                <XAxis dataKey="day" tick={{ fontSize: 11 }} />
-                <YAxis tick={{ fontSize: 11 }} />
-                <Tooltip formatter={(v: any) => fmtRM(Number(v))} />
-                <Bar dataKey="total" fill="var(--gx-violet)" radius={[6,6,0,0]} />
-              </BarChart>
-            </ResponsiveContainer></div>
-          ) : <Empty msg="Trends appear after a few receipts" />}
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="font-semibold text-sm">Fixed expenses</h3>
+            <Link to="/expenses" className="text-xs text-gx-violet inline-flex items-center gap-1 hover:underline">
+              More <ArrowUpRight className="w-3 h-3" />
+            </Link>
+          </div>
+          {fixed.length ? (
+            <div className="h-48 overflow-y-auto pr-1 space-y-2">
+              {fixed.map((f) => (
+                <div key={f.id} className="flex items-center justify-between text-sm py-1.5 border-b border-border/40 last:border-0">
+                  <div className="min-w-0">
+                    <div className="font-medium truncate">{f.name}</div>
+                    {f.category && <div className="text-[11px] text-muted-foreground truncate">{f.category}</div>}
+                  </div>
+                  <span className="font-semibold tabular-nums">{fmtRM(Number(f.amount))}</span>
+                </div>
+              ))}
+              <div className="flex items-center justify-between pt-2 text-xs text-muted-foreground">
+                <span>Total</span>
+                <span className="font-semibold text-foreground">
+                  {fmtRM(fixed.reduce((s, f) => s + Number(f.amount), 0))}
+                </span>
+              </div>
+            </div>
+          ) : <Empty msg="No fixed expenses yet" />}
         </Card>
       </div>
 
