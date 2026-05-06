@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { fmtRM, startOfToday, todayDate } from "@/lib/format";
-import { Plus, Trash2, AlertTriangle, Check, Flame } from "lucide-react";
+import { Plus, Trash2, AlertTriangle, Check, Flame, Info } from "lucide-react";
 import { toast } from "sonner";
 import { SavingsTree } from "@/components/SavingsTree";
 import {
@@ -20,6 +20,9 @@ import {
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
+import {
+  Popover, PopoverContent, PopoverTrigger,
+} from "@/components/ui/popover";
 
 export const Route = createFileRoute("/_auth/goals")({ component: Goals });
 
