@@ -143,8 +143,8 @@ function Dashboard() {
           </div>
           <Link to="/goals" className="text-xs text-gx-violet inline-flex items-center gap-1 hover:underline">Manage <ArrowUpRight className="w-3 h-3" /></Link>
         </div>
-        <div className="h-1.5 rounded-full bg-muted overflow-hidden">
-          <div className={`h-full transition-all ${dailyPct > 80 ? "bg-destructive" : "bg-gradient-gx-accent"}`} style={{ width: `${dailyPct}%` }} />
+        <div className="h-2 rounded-full bg-white/10 ring-1 ring-white/10 overflow-hidden">
+          <div className={`h-full rounded-full transition-all ${dailyPct > 80 ? "bg-destructive" : "bg-gradient-gx-accent"}`} style={{ width: `${dailyPct}%` }} />
         </div>
         <div className="flex justify-between text-xs text-muted-foreground mt-2">
           <span>{Math.round(dailyPct)}% of daily limit</span>
@@ -190,7 +190,7 @@ function Dashboard() {
           </div>
           {fixed.length ? (
             <div className="h-48 flex flex-col">
-              <div className="flex-1 overflow-y-auto pr-1 space-y-1.5">
+              <div className="flex-1 overflow-y-auto pr-2 space-y-1.5 scrollbar-pretty">
                 {fixed.map((f) => {
                   const s = styleFor(f.name, f.category);
                   const Icon = s.icon;
@@ -232,8 +232,8 @@ function Dashboard() {
                     <span className="font-medium">{g.title}</span>
                     <span className="text-muted-foreground">{fmtRM(g.current_amount)} / {fmtRM(g.target_amount)}</span>
                   </div>
-                  <div className="h-1.5 rounded-full bg-muted overflow-hidden">
-                    <div className="h-full bg-gradient-gx-accent" style={{ width: `${pct}%` }} />
+                  <div className="h-2 rounded-full bg-white/10 ring-1 ring-white/10 overflow-hidden">
+                    <div className="h-full rounded-full bg-gradient-gx-accent" style={{ width: `${pct}%` }} />
                   </div>
                 </div>
               );
