@@ -13,16 +13,18 @@ type Mood = "happy" | "calm" | "rain" | "storm";
 export function TreeWeather({ mood }: { mood: Mood }) {
   const dailyAnimal = useMemo(() => {
     const animals = [
-      "https://lottie.host/a18d0288-e456-43ee-82eb-530ce94f92d7/vwo2LRo1Vy.lottie", // cat
-      "https://lottie.host/5e3ddc60-a850-4dcd-b3de-92d2717c46d0/0AKsO4nLMP.lottie", // rabbit
-      "https://lottie.host/1949e66d-ac5a-47ad-95ba-3d2eaf21fd64/KDBMuHQAcz.lottie", // bird
-      "https://lottie.host/e0411131-bee9-48ed-ad84-51088d058024/Lu3fpl1lF6.lottie", // butterfly
-      "https://lottie.host/a089a439-4f68-48c0-9309-ae2de50ddc06/BJeo9SM9Iu.lottie", // fox
+      { id: "cat", src: "https://lottie.host/a18d0288-e456-43ee-82eb-530ce94f92d7/vwo2LRo1Vy.lottie" },
+      { id: "rabbit", src: "https://lottie.host/5e3ddc60-a850-4dcd-b3de-92d2717c46d0/0AKsO4nLMP.lottie" },
+      { id: "bird", src: "https://lottie.host/1949e66d-ac5a-47ad-95ba-3d2eaf21fd64/KDBMuHQAcz.lottie" },
+      { id: "butterfly", src: "https://lottie.host/e0411131-bee9-48ed-ad84-51088d058024/Lu3fpl1lF6.lottie" },
+      { id: "fox", src: "https://lottie.host/a089a439-4f68-48c0-9309-ae2de50ddc06/BJeo9SM9Iu.lottie" },
     ];
     const d = new Date();
     const dayKey = d.getFullYear() * 1000 + (d.getMonth() + 1) * 50 + d.getDate();
     return animals[dayKey % animals.length];
   }, []);
+
+  const isRoamer = dailyAnimal.id === "rabbit" || dailyAnimal.id === "fox";
 
   const drops = useMemo(() => {
     const count = mood === "storm" ? 50 : mood === "rain" ? 28 : 0;
@@ -103,13 +105,34 @@ export function TreeWeather({ mood }: { mood: Mood }) {
       )}
 
       {/* Cute critters for happy */}
-      {mood === "happy" && (
+      {mood === "happy" && !isRoamer && (
         <div
-          className="absolute"
-          style={{ bottom: "6%", right: "6%", width: 96, height: 96 }}
+          className="absolute left-1/2 -translate-x-1/2"
+          style={{ bottom: "4%", width: 96, height: 96 }}
         >
           <DotLottieReact
-            src={dailyAnimal}
+            src={dailyAnimal.src}
+            loop
+            autoplay
+            backgroundColor="transparent"
+            style={{ width: "100%", height: "100%", imageRendering: "auto" }}
+          />
+        </div>
+      )}
+
+      {mood === "happy" && isRoamer && (
+        <div
+          className="absolute"
+          style={{
+            bottom: "4%",
+            left: 0,
+            width: 96,
+            height: 96,
+            animation: "roam-x 8s ease-in-out infinite",
+          }}
+        >
+          <DotLottieReact
+            src={dailyAnimal.src}
             loop
             autoplay
             backgroundColor="transparent"
@@ -136,6 +159,13 @@ export function TreeWeather({ mood }: { mood: Mood }) {
         @keyframes sun-pulse {
           0%, 100% { transform: scale(1); filter: brightness(1); }
           50% { transform: scale(1.08); filter: brightness(1.15); }
+        }
+        @keyframes roam-x {
+          0%   { transform: translateX(0) scaleX(1); }
+          49%  { transform: translateX(calc(100% * 2.5)) scaleX(1); }
+          50%  { transform: translateX(calc(100% * 2.5)) scaleX(-1); }
+          99%  { transform: translateX(0) scaleX(-1); }
+          100% { transform: translateX(0) scaleX(1); }
         }
         /* Orbits around the tree (elliptical, with depth via scale) */
         @keyframes bunny-orbit {
