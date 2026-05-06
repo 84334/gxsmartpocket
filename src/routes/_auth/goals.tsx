@@ -333,19 +333,35 @@ function Goals() {
       <Card className="p-5 rounded-2xl border-border/60 shadow-soft">
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div className="min-w-0">
-            <h3 className="font-semibold">Daily spending limit</h3>
+            <div className="flex items-center gap-2">
+              <h3 className="font-semibold">Daily spending limit</h3>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <button type="button" aria-label="How it works" className="text-muted-foreground hover:text-foreground transition-colors">
+                    <Info className="w-4 h-4" />
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent className="w-72 text-xs">
+                  <p className="font-medium mb-1">How it works</p>
+                  <p className="text-muted-foreground">
+                    Set a daily spending cap. If you spend less than this today, the leftover money is saved into your goals automatically.
+                  </p>
+                  <div className="mt-2 pt-2 border-t border-border/60 text-muted-foreground space-y-1">
+                    <p>• Auto-save runs at <span className="text-foreground font-medium">11:59 PM</span> daily.</p>
+                    <p>• Spending counter resets at <span className="text-foreground font-medium">12:00 AM</span>.</p>
+                  </div>
+                </PopoverContent>
+              </Popover>
+            </div>
             <p className="text-xs text-muted-foreground mt-1">
-              Auto-save kicks in only when you stay under this. Today: <span className="text-foreground font-medium">{fmtRM(todaySpend)}</span> of {fmtRM(dailyLimit)}
-            </p>
-            <p className="text-[11px] text-muted-foreground mt-1">
-              ⏰ Auto-save runs daily at <span className="font-medium text-foreground">11:59 PM</span>. Limit resets at <span className="font-medium text-foreground">12:00 AM</span>.
+              You spent <span className="text-foreground font-medium">{fmtRM(todaySpend)}</span> of <span className="text-foreground font-medium">{fmtRM(dailyLimit)}</span> today.
             </p>
             <Progress value={Math.min(100, (todaySpend / Math.max(1, dailyLimit)) * 100)} className="mt-3 w-64 max-w-full" />
           </div>
           <div className="flex items-end gap-2">
             <div>
               <Label className="text-[10px] text-muted-foreground">Limit (RM/day)</Label>
-              <Input type="number" className="h-9 w-32" value={limitDraft} onChange={e => setLimitDraft(e.target.value)} />
+              <Input type="number" className="h-9 w-32 bg-background border-border/80 placeholder:text-muted-foreground/60" placeholder="e.g. 30" value={limitDraft} onChange={e => setLimitDraft(e.target.value)} />
             </div>
             <Button size="sm" onClick={saveDailyLimit} className="h-9 bg-primary text-primary-foreground hover:opacity-90 rounded-full px-4">
               Save
