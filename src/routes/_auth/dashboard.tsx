@@ -39,6 +39,7 @@ function Dashboard() {
   const [dailyLimit, setDailyLimit] = useState(0);
   const [todaySpend, setTodaySpend] = useState(0);
   const [genLoading, setGenLoading] = useState(false);
+  const [spentView, setSpentView] = useState<"total" | "split">("total");
   const isActive = useRouterState({ select: s => s.location.pathname === "/dashboard" });
 
   const load = async () => {
@@ -76,6 +77,8 @@ function Dashboard() {
   }, [isActive]);
 
   const totalSpend = items.reduce((s, i) => s + Number(i.price) * Number(i.quantity), 0);
+  const essentialSpend = items.filter(i => i.is_essential).reduce((s, i) => s + Number(i.price) * Number(i.quantity), 0);
+  const nonEssentialSpend = totalSpend - essentialSpend;
   const fixedTotal = fixed.reduce((s, i) => s + Number(i.amount), 0);
   const totalSavings = goals.reduce((s, g) => s + Number(g.current_amount || 0), 0);
   const remaining = income - fixedTotal - totalSpend - totalSavings;
@@ -126,7 +129,25 @@ function Dashboard() {
         <div className="relative grid grid-cols-4 gap-3 mt-7 pt-5 border-t border-white/10">
           <MiniStat label="Income" value={fmtRM(income)} />
           <MiniStat label="Fixed" value={fmtRM(fixedTotal)} />
-          <MiniStat label="Spent" value={fmtRM(totalSpend)} />
+          {spentView === "total" ? (
+            <MiniStat label="Spent" value={fmtRM(totalSpend)} onClick={() => setSpentView("split")} />
+          ) : (
+            <button onClick={() => setSpentView("total")} className="text-left focus:outline-none">
+              <div className="text-[10px] text-white/60 uppercase tracking-wide">Spent</div>
+              <div className="mt-0.5 space-y-0.5">
+                <div className="flex items-center gap-1.5 text-[11px]">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                  <span className="text-white/70">Ess</span>
+                  <span className="font-semibold text-white tabular-nums">{fmtRM(essentialSpend)}</span>
+                </div>
+                <div className="flex items-center gap-1.5 text-[11px]">
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+                  <span className="text-white/70">Non</span>
+                  <span className="font-semibold text-white tabular-nums">{fmtRM(nonEssentialSpend)}</span>
+                </div>
+              </div>
+            </button>
+          )}
           <MiniStat label="Saved" value={fmtRM(totalSavings)} accent />
         </div>
       </Card>
@@ -286,7 +307,15 @@ function Dashboard() {
   );
 }
 
-function MiniStat({ label, value, accent }: { label: string; value: string; accent?: boolean }) {
+function MiniStat({ label, value, accent, onClick }: { label: string; value: string; accent?: boolean; onClick?: () => void }) {
+  if (onClick) {
+    return (
+      <button onClick={onClick} className="text-left focus:outline-none hover:opacity-80 transition-opacity">
+        <div className="text-[10px] text-white/60 uppercase tracking-wide">{label}</div>
+        <div className={`font-semibold mt-0.5 ${accent ? "text-white" : "text-white/90"}`}>{value}</div>
+      </button>
+    );
+  }
   return (
     <div>
       <div className="text-[10px] text-white/60 uppercase tracking-wide">{label}</div>
