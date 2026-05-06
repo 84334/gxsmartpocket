@@ -308,9 +308,9 @@ function Goals() {
         <div className="absolute -left-10 -bottom-20 w-60 h-60 rounded-full bg-white/5 blur-3xl" />
         <div className="relative flex items-start justify-between flex-wrap gap-4">
           <div>
-            <div className="text-[11px] font-medium text-white/60 tracking-[0.18em] uppercase">Total saved</div>
+            <div className="text-[11px] font-medium text-white/60 tracking-[0.18em] uppercase">Total saved in pocket</div>
             <div className="text-4xl md:text-5xl font-semibold mt-2 tracking-tight">{fmtRM(totalSaved)}</div>
-            <div className="text-sm text-white/60 mt-1.5">Across {list.length} goal{list.length === 1 ? "" : "s"}</div>
+            <div className="text-sm text-white/60 mt-1.5">Across {list.length} pocket{list.length === 1 ? "" : "s"}</div>
           </div>
           <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur border border-white/10">
             <Flame className="w-4 h-4 text-white/90" />
@@ -346,7 +346,7 @@ function Goals() {
                 <PopoverContent className="w-72 text-xs">
                   <p className="font-medium mb-1">How it works</p>
                   <p className="text-muted-foreground">
-                    Set a daily spending cap. If you spend less than this today, the leftover money is saved into your goals automatically.
+                    Set a daily spending cap. If you spend less than this today, the leftover money is saved into your pockets automatically.
                   </p>
                   <div className="mt-2 pt-2 border-t border-border/60 text-muted-foreground space-y-1">
                     <p>• Auto-save runs at <span className="text-foreground font-medium">11:59 PM</span> daily.</p>
@@ -372,15 +372,15 @@ function Goals() {
         </div>
       </Card>
 
-      {/* Goals list */}
+      {/* Pockets list */}
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold">Your goals</h2>
+        <h2 className="text-lg font-semibold">Your pockets</h2>
         <Dialog open={openNew} onOpenChange={setOpenNew}>
           <DialogTrigger asChild>
-            <Button size="sm" className="bg-gx-ink text-white hover:opacity-90 rounded-full px-4"><Plus className="w-4 h-4" /> New goal</Button>
+            <Button size="sm" className="bg-gx-ink text-white hover:opacity-90 rounded-full px-4"><Plus className="w-4 h-4" /> New pocket</Button>
           </DialogTrigger>
           <DialogContent>
-            <DialogHeader><DialogTitle>Create a new goal</DialogTitle></DialogHeader>
+            <DialogHeader><DialogTitle>Create a new pocket</DialogTitle></DialogHeader>
             <div className="space-y-3">
               <div><Label className="text-xs">What for?</Label><Input placeholder="Trip to Korea" className="bg-background border-border/80 placeholder:text-muted-foreground/60" value={title} onChange={e => setTitle(e.target.value)} /></div>
               <div className="grid grid-cols-2 gap-2">
