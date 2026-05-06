@@ -146,12 +146,12 @@ function Expenses() {
 
 function SummaryTile({ icon: Icon, label, value, tint, fg }: { icon: any; label: string; value: string; tint: string; fg: string }) {
   return (
-    <Card className="p-4 rounded-2xl border-border/60 shadow-soft">
+    <Card className="p-3 sm:p-4 rounded-2xl border-border/60 shadow-soft min-w-0">
       <div className={`w-8 h-8 rounded-lg ${tint} flex items-center justify-center mb-2`}>
         <Icon className={`w-4 h-4 ${fg}`} />
       </div>
       <div className="text-[10px] uppercase tracking-wide text-muted-foreground">{label}</div>
-      <div className={`font-bold text-base mt-0.5 tabular-nums ${fg}`}>{value}</div>
+      <div className={`font-bold text-sm sm:text-base mt-0.5 tabular-nums truncate ${fg}`}>{value}</div>
     </Card>
   );
 }
