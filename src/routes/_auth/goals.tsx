@@ -17,6 +17,9 @@ import {
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter,
 } from "@/components/ui/dialog";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
 
 export const Route = createFileRoute("/_auth/goals")({ component: Goals });
 
@@ -36,6 +39,8 @@ function Goals() {
   const [withdrawAmt, setWithdrawAmt] = useState("");
   const [cooldown, setCooldown] = useState(0);
   const [celebrateGoal, setCelebrateGoal] = useState<any | null>(null);
+  const [deleteGoal, setDeleteGoal] = useState<any | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<string>("balance");
   const cdRef = useRef<number | null>(null);
   const autoRan = useRef(false);
 
@@ -85,12 +90,45 @@ function Goals() {
       Number(g.current_amount) < Number(g.target_amount)
     );
     if (!pending.length) return;
-    let remaining = Math.max(0, limit - spend);
+    // Priority: nearest deadline first, then larger daily requirement
+    pending.sort((a, b) => {
+      const da = a.target_date ? new Date(a.target_date).getTime() : Infinity;
+      const db = b.target_date ? new Date(b.target_date).getTime() : Infinity;
+      if (da !== db) return da - db;
+      return Number(b.daily_save_amount) - Number(a.daily_save_amount);
+    });
+    const remaining = Math.max(0, limit - spend);
+    if (remaining <= 0) return;
+    const totalRequired = pending.reduce((s, g) => s + Number(g.daily_save_amount), 0);
+    const allocations = new Map<string, number>();
+    if (remaining >= totalRequired) {
+      pending.forEach(g => allocations.set(g.id, Number(g.daily_save_amount)));
+    } else if (remaining <= 1) {
+      // Too small to split — give entirely to highest-priority goal
+      allocations.set(pending[0].id, remaining);
+    } else {
+      // Proportional split based on each goal's required daily savings, capped at need
+      const weights = pending.map(g => Math.min(Number(g.daily_save_amount), remaining));
+      const wSum = weights.reduce((s, w) => s + w, 0) || 1;
+      let leftover = remaining;
+      pending.forEach((g, i) => {
+        const ideal = (weights[i] / wSum) * remaining;
+        const cap = Number(g.daily_save_amount);
+        const alloc = Math.min(cap, Math.round(ideal * 100) / 100);
+        allocations.set(g.id, alloc);
+        leftover -= alloc;
+      });
+      // Assign rounding remainder to highest-priority goal (cap at its requirement)
+      if (leftover > 0.001) {
+        const top = pending[0];
+        const cur = allocations.get(top.id) || 0;
+        allocations.set(top.id, Math.min(Number(top.daily_save_amount), cur + leftover));
+      }
+    }
     let savedTotal = 0;
     for (const g of pending) {
-      const planned = Number(g.daily_save_amount);
-      const apply = Math.min(planned, remaining);
-      remaining -= apply;
+      const apply = Number(allocations.get(g.id) || 0);
+      if (apply <= 0) continue;
       await supabase.from("savings_goals").update({
         current_amount: Number(g.current_amount) + apply,
         last_saved_on: today,
@@ -153,7 +191,35 @@ function Goals() {
     load();
   };
 
-  const remove = async (id: string) => { await supabase.from("savings_goals").delete().eq("id", id); load(); };
+  const requestRemove = (g: any) => {
+    setDeleteGoal(g);
+    setDeleteTarget("balance");
+  };
+
+  const confirmRemove = async () => {
+    if (!deleteGoal) return;
+    const amt = Number(deleteGoal.current_amount || 0);
+    if (amt > 0 && deleteTarget !== "balance" && deleteTarget !== "discard") {
+      // Transfer to another existing goal
+      const target = list.find(g => g.id === deleteTarget);
+      if (target) {
+        await supabase.from("savings_goals").update({
+          current_amount: Number(target.current_amount) + amt,
+        }).eq("id", target.id);
+      }
+    }
+    await supabase.from("savings_goals").delete().eq("id", deleteGoal.id);
+    if (amt > 0) {
+      if (deleteTarget === "balance") toast.success(`${fmtRM(amt)} returned to your available balance`);
+      else if (deleteTarget === "discard") toast.success("Goal deleted");
+      else toast.success(`${fmtRM(amt)} moved to another goal`);
+    } else {
+      toast.success("Goal deleted");
+    }
+    setDeleteGoal(null);
+    window.dispatchEvent(new Event("smartreceipt:balance-updated"));
+    load();
+  };
 
   const keepInTotalSaved = async () => {
     if (!celebrateGoal) return;
@@ -268,6 +334,9 @@ function Goals() {
             <p className="text-xs text-muted-foreground mt-1">
               Auto-save kicks in only when you stay under this. Today: <span className="text-foreground font-medium">{fmtRM(todaySpend)}</span> of {fmtRM(dailyLimit)}
             </p>
+            <p className="text-[11px] text-muted-foreground mt-1">
+              ⏰ Auto-save runs daily at <span className="font-medium text-foreground">11:59 PM</span>. Limit resets at <span className="font-medium text-foreground">12:00 AM</span>.
+            </p>
             <Progress value={Math.min(100, (todaySpend / Math.max(1, dailyLimit)) * 100)} className="mt-3 w-64 max-w-full" />
           </div>
           <div className="flex items-end gap-2">
@@ -342,7 +411,7 @@ function Goals() {
                         Choose what's next
                       </Button>
                     )}
-                    <Button size="icon" variant="ghost" className="h-8 w-8 ml-auto" onClick={() => remove(g.id)}><Trash2 className="w-4 h-4" /></Button>
+                    <Button size="icon" variant="ghost" className="h-8 w-8 ml-auto" onClick={() => requestRemove(g)}><Trash2 className="w-4 h-4" /></Button>
                   </div>
                 ) : (
                 <div className="mt-3 flex items-end gap-2">
@@ -386,7 +455,7 @@ function Goals() {
                   <Button size="sm" variant="outline" className="h-8" onClick={() => startWithdraw(g.id)} disabled={Number(g.current_amount) <= 0}>
                     Withdraw
                   </Button>
-                  <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => remove(g.id)}><Trash2 className="w-4 h-4" /></Button>
+                  <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => requestRemove(g)}><Trash2 className="w-4 h-4" /></Button>
                 </div>
                 )}
               </Card>
@@ -466,6 +535,40 @@ function Goals() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={!!deleteGoal} onOpenChange={o => !o && setDeleteGoal(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5 text-warning" /> Delete {deleteGoal?.title}?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {Number(deleteGoal?.current_amount || 0) > 0
+                ? `This goal has ${fmtRM(deleteGoal?.current_amount || 0)} saved. Where should it go?`
+                : "This goal has no savings. It will be permanently deleted."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          {Number(deleteGoal?.current_amount || 0) > 0 && (
+            <div className="space-y-2">
+              <Label className="text-xs">Move funds to</Label>
+              <Select value={deleteTarget} onValueChange={setDeleteTarget}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="balance">💰 Available balance</SelectItem>
+                  {list.filter(g => g.id !== deleteGoal?.id && !g.completed_at).map(g => (
+                    <SelectItem key={g.id} value={g.id}>🎯 {g.title}</SelectItem>
+                  ))}
+                  <SelectItem value="discard">🗑️ Discard funds</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmRemove}>Delete goal</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
