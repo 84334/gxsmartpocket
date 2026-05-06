@@ -97,8 +97,7 @@ export function SavingsTree({ streak, goal }: Props) {
           </filter>
         </defs>
 
-        {/* Dark night background */}
-        <rect x="0" y="0" width="240" height="260" fill="url(#bg)" rx="14" />
+        {/* Transparent background */}
         {/* Halo behind canopy */}
         {p > 0.05 && (
           <ellipse cx="120" cy={canopyY + 6} rx={canopyR * 1.5} ry={canopyR * 1.2} fill="url(#halo)" />
