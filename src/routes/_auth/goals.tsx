@@ -535,6 +535,40 @@ function Goals() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={!!deleteGoal} onOpenChange={o => !o && setDeleteGoal(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5 text-warning" /> Delete {deleteGoal?.title}?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {Number(deleteGoal?.current_amount || 0) > 0
+                ? `This goal has ${fmtRM(deleteGoal?.current_amount || 0)} saved. Where should it go?`
+                : "This goal has no savings. It will be permanently deleted."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          {Number(deleteGoal?.current_amount || 0) > 0 && (
+            <div className="space-y-2">
+              <Label className="text-xs">Move funds to</Label>
+              <Select value={deleteTarget} onValueChange={setDeleteTarget}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="balance">💰 Available balance</SelectItem>
+                  {list.filter(g => g.id !== deleteGoal?.id && !g.completed_at).map(g => (
+                    <SelectItem key={g.id} value={g.id}>🎯 {g.title}</SelectItem>
+                  ))}
+                  <SelectItem value="discard">🗑️ Discard funds</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmRemove}>Delete goal</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
