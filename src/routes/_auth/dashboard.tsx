@@ -126,7 +126,7 @@ function Dashboard() {
             </Button>
           </Link>
         </div>
-        <div className="relative grid grid-cols-4 gap-3 mt-7 pt-5 border-t border-white/10">
+        <div className="relative grid grid-cols-2 sm:grid-cols-4 gap-x-4 gap-y-4 mt-7 pt-5 border-t border-white/10">
           <MiniStat label="Income" value={fmtRM(income)} />
           <MiniStat label="Fixed" value={fmtRM(fixedTotal)} />
           {spentView === "total" ? (
@@ -138,12 +138,12 @@ function Dashboard() {
                 <div className="flex items-center gap-1.5 text-[11px]">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
                   <span className="text-white/70">Ess</span>
-                  <span className="font-semibold text-white tabular-nums">{fmtRM(essentialSpend)}</span>
+                  <span className="font-semibold text-white tabular-nums truncate">{fmtRM(essentialSpend)}</span>
                 </div>
                 <div className="flex items-center gap-1.5 text-[11px]">
                   <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
                   <span className="text-white/70">Non</span>
-                  <span className="font-semibold text-white tabular-nums">{fmtRM(nonEssentialSpend)}</span>
+                  <span className="font-semibold text-white tabular-nums truncate">{fmtRM(nonEssentialSpend)}</span>
                 </div>
               </div>
             </button>
