@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { fmtRM, startOfMonth, startOfToday } from "@/lib/format";
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip } from "recharts";
-import { Upload, RefreshCw, ArrowUpRight, Wallet, Home, Zap, Wifi, Car, Phone, CreditCard, ShoppingBag, Heart, Tv, Dumbbell, BookOpen, Receipt } from "lucide-react";
+import { Upload, RefreshCw, ArrowUpRight, Wallet, Home, Zap, Wifi, Car, Phone, CreditCard, ShoppingBag, Heart, Tv, Dumbbell, BookOpen, Receipt, Lightbulb, Sprout, Sparkles, AlertTriangle, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_auth/dashboard")({ component: Dashboard });
@@ -254,20 +254,21 @@ function Dashboard() {
           <div className="grid sm:grid-cols-2 gap-3">
             {insights.map((i, idx) => {
               const palettes = [
-                { bar: "bg-gx-violet", icon: "💡", tint: "bg-violet-500/10 border-violet-500/30", dot: "text-violet-400" },
-                { bar: "bg-emerald-500", icon: "🌱", tint: "bg-emerald-500/10 border-emerald-500/30", dot: "text-emerald-400" },
-                { bar: "bg-amber-500", icon: "⚡", tint: "bg-amber-500/10 border-amber-500/30", dot: "text-amber-400" },
-                { bar: "bg-sky-500", icon: "✨", tint: "bg-sky-500/10 border-sky-500/30", dot: "text-sky-400" },
+                { bar: "bg-gx-violet", Icon: Lightbulb, tint: "bg-violet-500/10 border-violet-500/30", fg: "text-violet-400" },
+                { bar: "bg-emerald-500", Icon: Sprout, tint: "bg-emerald-500/10 border-emerald-500/30", fg: "text-emerald-400" },
+                { bar: "bg-amber-500", Icon: Zap, tint: "bg-amber-500/10 border-amber-500/30", fg: "text-amber-400" },
+                { bar: "bg-sky-500", Icon: Sparkles, tint: "bg-sky-500/10 border-sky-500/30", fg: "text-sky-400" },
               ];
               const sev =
-                i.severity === "warning" ? { bar: "bg-amber-500", icon: "⚠️", tint: "bg-amber-500/10 border-amber-500/30", dot: "text-amber-400" } :
-                i.severity === "success" ? { bar: "bg-emerald-500", icon: "✅", tint: "bg-emerald-500/10 border-emerald-500/30", dot: "text-emerald-400" } :
+                i.severity === "warning" ? { bar: "bg-amber-500", Icon: AlertTriangle, tint: "bg-amber-500/10 border-amber-500/30", fg: "text-amber-400" } :
+                i.severity === "success" ? { bar: "bg-emerald-500", Icon: CheckCircle2, tint: "bg-emerald-500/10 border-emerald-500/30", fg: "text-emerald-400" } :
                 palettes[idx % palettes.length];
+              const SevIcon = sev.Icon;
               return (
                 <div key={i.id} className={`relative rounded-xl p-3.5 pl-4 text-sm border ${sev.tint} overflow-hidden`}>
                   <span className={`absolute left-0 top-0 bottom-0 w-1 ${sev.bar}`} />
                   <div className="flex items-start gap-2">
-                    <span className="text-base leading-none mt-0.5">{sev.icon}</span>
+                    <SevIcon className={`w-4 h-4 mt-0.5 shrink-0 ${sev.fg}`} />
                     <div className="flex-1 min-w-0">
                       <div className="font-semibold text-xs text-foreground">{i.title}</div>
                       <div className="text-xs text-muted-foreground mt-1.5">{i.body}</div>
