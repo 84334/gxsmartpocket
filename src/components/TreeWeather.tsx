@@ -20,8 +20,10 @@ export function TreeWeather({ mood }: { mood: Mood }) {
       { id: "fox", src: "https://lottie.host/a089a439-4f68-48c0-9309-ae2de50ddc06/BJeo9SM9Iu.lottie" },
     ];
     const d = new Date();
-    const dayKey = d.getFullYear() * 1000 + (d.getMonth() + 1) * 50 + d.getDate();
-    return animals[dayKey % animals.length];
+    // Day-of-year based rotation so each day cycles to the next animal
+    const start = new Date(d.getFullYear(), 0, 0);
+    const dayOfYear = Math.floor((d.getTime() - start.getTime()) / 86400000);
+    return animals[dayOfYear % animals.length];
   }, []);
 
   const isRoamer = dailyAnimal.id === "rabbit" || dailyAnimal.id === "fox";
@@ -131,7 +133,7 @@ export function TreeWeather({ mood }: { mood: Mood }) {
               width: 96,
               height: 96,
               left: 0,
-              animation: "roam-x 10s ease-in-out infinite",
+              animation: "roam-x 12s ease-in-out infinite",
             }}
           >
             <DotLottieReact
@@ -166,9 +168,9 @@ export function TreeWeather({ mood }: { mood: Mood }) {
         }
         @keyframes roam-x {
           0%   { left: 0;                  transform: scaleX(1); }
-          49%  { left: calc(100% - 96px);  transform: scaleX(1); }
+          42%  { left: calc(100% - 96px);  transform: scaleX(1); }
           50%  { left: calc(100% - 96px);  transform: scaleX(-1); }
-          99%  { left: 0;                  transform: scaleX(-1); }
+          96%  { left: 0;                  transform: scaleX(-1); }
           100% { left: 0;                  transform: scaleX(1); }
         }
         /* Orbits around the tree (elliptical, with depth via scale) */
