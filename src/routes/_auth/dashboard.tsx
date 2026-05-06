@@ -215,14 +215,18 @@ function Dashboard() {
         {insights.length ? (
           <div className="grid sm:grid-cols-2 gap-2">
             {insights.map(i => (
-              <div key={i.id} className={`rounded-xl p-3 text-sm border ${
+              <details key={i.id} className={`group rounded-xl p-3 text-sm border ${
                 i.severity === "warning" ? "bg-warning/10 border-warning/30" :
                 i.severity === "success" ? "bg-success/10 border-success/30" :
                 "bg-muted border-border"
               }`}>
-                <div className="font-semibold text-xs">{i.title}</div>
-                <div className="text-xs text-muted-foreground mt-1">{i.body}</div>
-              </div>
+                <summary className="font-semibold text-xs cursor-pointer list-none flex items-center justify-between gap-2">
+                  <span className="truncate">{i.title}</span>
+                  <span className="text-[10px] text-muted-foreground group-open:hidden shrink-0">More</span>
+                  <span className="text-[10px] text-muted-foreground hidden group-open:inline shrink-0">Less</span>
+                </summary>
+                <div className="text-xs text-muted-foreground mt-1.5">{i.body}</div>
+              </details>
             ))}
           </div>
         ) : (
