@@ -205,7 +205,7 @@ function Dashboard() {
                   );
                 })}
               </div>
-              <div className="flex items-center justify-between pt-2 mt-1 border-t border-border/40 text-xs">
+              <div className="flex items-center justify-between pt-3 mt-3 border-t border-border/40 text-xs">
                 <span className="text-muted-foreground">Total</span>
                 <span className="font-semibold text-foreground tabular-nums">
                   {fmtRM(fixed.reduce((s, f) => s + Number(f.amount), 0))}
@@ -251,17 +251,31 @@ function Dashboard() {
           </Button>
         </div>
         {insights.length ? (
-          <div className="grid sm:grid-cols-2 gap-2">
-            {insights.map(i => (
-              <div key={i.id} className={`rounded-xl p-3 text-sm border ${
-                i.severity === "warning" ? "bg-warning/10 border-warning/30" :
-                i.severity === "success" ? "bg-success/10 border-success/30" :
-                "bg-muted border-border"
-              }`}>
-                <div className="font-semibold text-xs">{i.title}</div>
-                <div className="text-xs text-muted-foreground mt-1.5">{i.body}</div>
-              </div>
-            ))}
+          <div className="grid sm:grid-cols-2 gap-3">
+            {insights.map((i, idx) => {
+              const palettes = [
+                { bar: "bg-gx-violet", icon: "💡", tint: "bg-violet-500/10 border-violet-500/30", dot: "text-violet-400" },
+                { bar: "bg-emerald-500", icon: "🌱", tint: "bg-emerald-500/10 border-emerald-500/30", dot: "text-emerald-400" },
+                { bar: "bg-amber-500", icon: "⚡", tint: "bg-amber-500/10 border-amber-500/30", dot: "text-amber-400" },
+                { bar: "bg-sky-500", icon: "✨", tint: "bg-sky-500/10 border-sky-500/30", dot: "text-sky-400" },
+              ];
+              const sev =
+                i.severity === "warning" ? { bar: "bg-amber-500", icon: "⚠️", tint: "bg-amber-500/10 border-amber-500/30", dot: "text-amber-400" } :
+                i.severity === "success" ? { bar: "bg-emerald-500", icon: "✅", tint: "bg-emerald-500/10 border-emerald-500/30", dot: "text-emerald-400" } :
+                palettes[idx % palettes.length];
+              return (
+                <div key={i.id} className={`relative rounded-xl p-3.5 pl-4 text-sm border ${sev.tint} overflow-hidden`}>
+                  <span className={`absolute left-0 top-0 bottom-0 w-1 ${sev.bar}`} />
+                  <div className="flex items-start gap-2">
+                    <span className="text-base leading-none mt-0.5">{sev.icon}</span>
+                    <div className="flex-1 min-w-0">
+                      <div className="font-semibold text-xs text-foreground">{i.title}</div>
+                      <div className="text-xs text-muted-foreground mt-1.5">{i.body}</div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         ) : (
           <div className="text-xs text-muted-foreground text-center py-4">Tap refresh to get personalised tips.</div>
