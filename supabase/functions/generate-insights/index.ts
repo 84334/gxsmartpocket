@@ -40,8 +40,8 @@ serve(async (req) => {
       body: JSON.stringify({
         model: "google/gemini-2.5-flash",
         messages: [
-          { role: "system", content: "You are a friendly personal finance coach for students in Malaysia. Currency is RM. Be specific, reference numbers, and keep tips short and actionable." },
-          { role: "user", content: `Analyse this user's last 60 days of spending and produce 3-5 insights plus a financial health score.\n\nDATA:\n${JSON.stringify(summary).slice(0,8000)}` },
+          { role: "system", content: "You are a friendly personal finance coach for students in Malaysia. Currency is RM. Tips MUST be ultra-short: title max 6 words, body max 18 words, one concrete action with a number. No fluff, no greetings, no explanations." },
+          { role: "user", content: `Analyse this user's last 60 days of spending and produce 3-5 ultra-short insights plus a financial health score. Each body must be ONE sentence, max 18 words.\n\nDATA:\n${JSON.stringify(summary).slice(0,8000)}` },
         ],
         tools: [{
           type: "function",
@@ -58,7 +58,7 @@ serve(async (req) => {
                     type: "object",
                     properties: {
                       title: { type: "string" },
-                      body: { type: "string" },
+                      body: { type: "string", description: "One sentence, max 18 words, with a concrete number/action." },
                       severity: { type: "string", enum: ["info","warning","success"] },
                     },
                     required: ["title","body","severity"],
