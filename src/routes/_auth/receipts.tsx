@@ -47,6 +47,7 @@ function Receipts() {
   const [editMerchant, setEditMerchant] = useState("");
   const [editPurchasedAt, setEditPurchasedAt] = useState("");
   const [savingEdit, setSavingEdit] = useState(false);
+  const [editImageUrl, setEditImageUrl] = useState<string>("");
 
   const load = async () => {
     const { data } = await supabase.from("receipts").select("*, receipt_items(*)").order("purchased_at", { ascending: false });
@@ -61,7 +62,7 @@ function Receipts() {
     load();
   };
 
-  const openEdit = (r: any) => {
+  const openEdit = async (r: any) => {
     setEditing(r);
     setEditMerchant(r.merchant ?? "");
     setEditPurchasedAt(new Date(r.purchased_at).toISOString().slice(0, 16));
@@ -73,6 +74,23 @@ function Receipts() {
       category: it.category,
       is_essential: it.is_essential,
     })));
+    setEditImageUrl("");
+    if (r.image_url) {
+      try {
+        // Stored URL may be expired; extract storage path and re-sign.
+        const m = r.image_url.match(/\/receipts\/([^?]+)/);
+        const path = m?.[1];
+        if (path) {
+          const { data } = await supabase.storage.from("receipts").createSignedUrl(decodeURIComponent(path), 60 * 60);
+          if (data?.signedUrl) setEditImageUrl(data.signedUrl);
+          else setEditImageUrl(r.image_url);
+        } else {
+          setEditImageUrl(r.image_url);
+        }
+      } catch {
+        setEditImageUrl(r.image_url);
+      }
+    }
   };
 
   const updateItem = (i: number, patch: any) =>
@@ -223,6 +241,11 @@ function Receipts() {
             <DialogTitle>Edit receipt</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
+            {editImageUrl && (
+              <div className="rounded-lg border border-border p-2 bg-muted/30">
+                <img src={editImageUrl} alt="receipt" className="w-full h-auto rounded-md object-contain max-h-72 mx-auto" />
+              </div>
+            )}
             <div className="grid sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <Label>Merchant</Label>
