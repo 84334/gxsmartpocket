@@ -23,6 +23,8 @@ import {
 import {
   Popover, PopoverContent, PopoverTrigger,
 } from "@/components/ui/popover";
+import { TreeWeather } from "@/components/TreeWeather";
+import { TreeHowItWorks } from "@/components/TreeHowItWorks";
 
 export const Route = createFileRoute("/_auth/goals")({ component: Goals });
 
@@ -491,7 +493,10 @@ function Goals() {
       <Card className="p-6 overflow-hidden">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h3 className="font-semibold text-lg">Your savings tree 🌳</h3>
+            <div className="flex items-center gap-2">
+              <h3 className="font-semibold text-lg">Your savings tree 🌳</h3>
+              <TreeHowItWorks />
+            </div>
             <p className="text-xs text-muted-foreground">Save every day to grow it. Skip a day, it resets.</p>
           </div>
           <div className="text-right">
@@ -499,7 +504,22 @@ function Goals() {
             <div className="font-semibold">{longestStreak} days</div>
           </div>
         </div>
-        <div className="rounded-2xl p-4">
+        <div className="rounded-2xl p-4 relative overflow-hidden">
+          <TreeWeather
+            mood={
+              list.length === 0
+                ? "calm"
+                : (() => {
+                    const active = list.filter(g => !g.completed_at && Number(g.daily_save_amount) > 0);
+                    if (todaySpend > dailyLimit) return "storm";
+                    if (active.length === 0) return "calm";
+                    const allSaved = active.every(g => g.last_saved_on === todayDate());
+                    if (allSaved) return "happy";
+                    const someSaved = active.some(g => g.last_saved_on === todayDate());
+                    return someSaved ? "calm" : "rain";
+                  })()
+            }
+          />
           <SavingsTree streak={streak} goal={Math.max(30, longestStreak || 30)} />
         </div>
       </Card>
