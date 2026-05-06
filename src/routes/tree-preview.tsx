@@ -42,7 +42,7 @@ function pickStage(streak: number) {
 function ImageTree({ streak }: { streak: number }) {
   const stage = pickStage(streak);
   return (
-    <div className="relative w-full aspect-square max-w-[320px] mx-auto rounded-2xl overflow-hidden bg-gradient-to-b from-[#1a1230] to-[#07050d] flex items-end justify-center">
+    <div className="relative w-full aspect-square max-w-[320px] mx-auto flex items-end justify-center">
       {/* glow */}
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_70%,rgba(253,224,71,0.25),transparent_60%)]" />
       <img
