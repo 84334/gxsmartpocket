@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { Info, ChevronRight, RotateCcw } from "lucide-react";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger,
@@ -13,7 +13,7 @@ type Slide = {
   title: string;
   body: string;
   bg: string;
-  art: JSX.Element;
+  art: ReactNode;
 };
 
 const SLIDES: Slide[] = [
