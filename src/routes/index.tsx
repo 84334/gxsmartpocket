@@ -31,7 +31,7 @@ function Index() {
           Snap a receipt. <span className="text-accent">Master your money.</span>
         </h1>
         <p className="mt-6 text-lg text-primary-foreground/80 max-w-2xl mx-auto">
-          GX Smart Pocket reads your receipts, spots wasteful spending, and coaches you toward your savings goals — automatically.
+          GX Smart Pocket reads your receipts, spots wasteful spending, and coaches you toward filling your pockets — automatically.
         </p>
       </section>
 
@@ -40,7 +40,7 @@ function Index() {
           { i: ScanLine, t: "AI Receipt Scan", d: "Photo in, itemised spending out — auto-categorised." },
           { i: PieChart, t: "Smart Dashboard", d: "Track every RM with charts and trends over time." },
           { i: Brain, t: "Habit Insights", d: "AI flags wasteful patterns like daily bubble tea." },
-          { i: Target, t: "Savings Goals", d: "Plan a Korea trip — see exactly how to get there." },
+          { i: Target, t: "Pockets", d: "Plan a Korea trip — see exactly how to get there." },
         ].map((f, i) => (
           <div key={i} className="rounded-2xl bg-white/5 backdrop-blur p-5 border border-white/10">
             <f.i className="w-6 h-6 text-accent mb-3" />
