@@ -262,11 +262,21 @@ function Goals() {
     const { data: u } = await supabase.auth.getUser();
     if (!u.user) return;
     const today = todayDate();
-    if (lastStreakDate === today) return;
+    // Always read fresh from DB — React state may be stale when called
+    // immediately after load() (e.g. from autoSaveToday).
+    const { data: pr } = await supabase
+      .from("profiles")
+      .select("streak_days, longest_streak, last_streak_date")
+      .eq("id", u.user.id)
+      .maybeSingle();
+    const curLastDate = (pr as any)?.last_streak_date ?? null;
+    const curStreak = Number(pr?.streak_days ?? 0);
+    const curLongest = Number(pr?.longest_streak ?? 0);
+    if (curLastDate === today) return;
     const yest = new Date(); yest.setDate(yest.getDate() - 1);
     const yStr = yest.toISOString().slice(0, 10);
-    const newStreak = lastStreakDate === yStr ? streak + 1 : 1;
-    const newLongest = Math.max(longestStreak, newStreak);
+    const newStreak = curLastDate === yStr ? curStreak + 1 : 1;
+    const newLongest = Math.max(curLongest, newStreak);
     await supabase.from("profiles").update({
       streak_days: newStreak, longest_streak: newLongest, last_streak_date: today,
     }).eq("id", u.user.id);
