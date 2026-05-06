@@ -20,8 +20,10 @@ export function TreeWeather({ mood }: { mood: Mood }) {
       { id: "fox", src: "https://lottie.host/a089a439-4f68-48c0-9309-ae2de50ddc06/BJeo9SM9Iu.lottie" },
     ];
     const d = new Date();
-    const dayKey = d.getFullYear() * 1000 + (d.getMonth() + 1) * 50 + d.getDate();
-    return animals[dayKey % animals.length];
+    // Day-of-year based rotation so each day cycles to the next animal
+    const start = new Date(d.getFullYear(), 0, 0);
+    const dayOfYear = Math.floor((d.getTime() - start.getTime()) / 86400000);
+    return animals[dayOfYear % animals.length];
   }, []);
 
   const isRoamer = dailyAnimal.id === "rabbit" || dailyAnimal.id === "fox";
@@ -131,7 +133,7 @@ export function TreeWeather({ mood }: { mood: Mood }) {
               width: 96,
               height: 96,
               left: 0,
-              animation: "roam-x 10s ease-in-out infinite",
+              animation: "roam-x 16s linear infinite",
             }}
           >
             <DotLottieReact
