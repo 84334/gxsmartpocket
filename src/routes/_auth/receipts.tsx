@@ -174,23 +174,42 @@ function Receipts() {
       <section className="space-y-3">
         <h2 className="text-lg font-semibold flex items-center gap-2"><Upload className="w-4 h-4" /> Scan</h2>
         <Card className="p-6 bg-gradient-card shadow-elegant max-w-2xl mx-auto">
-            <label className="block">
-              <input type="file" accept="image/*" capture="environment" className="hidden"
-                onChange={e => onPick(e.target.files?.[0] ?? null)} />
-              <div className="border-2 border-dashed border-border rounded-xl p-8 text-center cursor-pointer hover:bg-muted transition">
-                {preview ? (
+            {preview ? (
+              <label className="block">
+                <input type="file" accept="image/*" className="hidden"
+                  onChange={e => onPick(e.target.files?.[0] ?? null)} />
+                <div className="border-2 border-dashed border-border rounded-xl p-4 text-center cursor-pointer hover:bg-muted transition">
                   <img src={preview} alt="preview" className="mx-auto max-h-80 rounded-lg" />
-                ) : (
-                  <div className="flex flex-col items-center gap-3 py-8">
-                    <div className="w-14 h-14 rounded-2xl bg-gradient-mint flex items-center justify-center shadow-glow">
-                      <Camera className="w-6 h-6 text-primary" />
-                    </div>
-                    <div className="font-semibold">Tap to choose or take a photo</div>
-                    <div className="text-xs text-muted-foreground">JPG, PNG, HEIC up to 10MB</div>
+                  <div className="text-xs text-muted-foreground mt-2">Tap to choose a different photo</div>
+                </div>
+              </label>
+            ) : (
+              <div className="border-2 border-dashed border-border rounded-xl p-6 text-center">
+                <div className="flex flex-col items-center gap-3 py-4">
+                  <div className="w-14 h-14 rounded-2xl bg-gradient-mint flex items-center justify-center shadow-glow">
+                    <Camera className="w-6 h-6 text-primary" />
                   </div>
-                )}
+                  <div className="font-semibold">Add a receipt photo</div>
+                  <div className="text-xs text-muted-foreground">JPG, PNG, HEIC up to 10MB</div>
+                </div>
+                <div className="grid grid-cols-2 gap-2 mt-2">
+                  <label className="block">
+                    <input type="file" accept="image/*" capture="environment" className="hidden"
+                      onChange={e => onPick(e.target.files?.[0] ?? null)} />
+                    <span className="inline-flex items-center justify-center gap-2 w-full h-10 rounded-md border border-border bg-background hover:bg-muted text-sm font-medium cursor-pointer transition">
+                      <Camera className="w-4 h-4" /> Take photo
+                    </span>
+                  </label>
+                  <label className="block">
+                    <input type="file" accept="image/*" className="hidden"
+                      onChange={e => onPick(e.target.files?.[0] ?? null)} />
+                    <span className="inline-flex items-center justify-center gap-2 w-full h-10 rounded-md border border-border bg-background hover:bg-muted text-sm font-medium cursor-pointer transition">
+                      <ImageIcon className="w-4 h-4" /> Choose from album
+                    </span>
+                  </label>
+                </div>
               </div>
-            </label>
+            )}
             <Button variant="hero" className="w-full mt-4" disabled={!file || busy} onClick={submitScan}>
               {busy ? <><Loader2 className="animate-spin" /> Reading receipt…</> : <><Upload /> Scan with AI</>}
             </Button>
