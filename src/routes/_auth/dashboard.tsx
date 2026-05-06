@@ -220,7 +220,7 @@ function Dashboard() {
       {goals.length > 0 && (
         <Card className="p-5 rounded-2xl border-border/60 shadow-soft">
           <div className="flex items-center justify-between mb-3">
-            <h3 className="font-semibold text-sm">Savings goals</h3>
+            <h3 className="font-semibold text-sm">Pockets</h3>
             <Link to="/goals" className="text-xs text-gx-violet inline-flex items-center gap-1 hover:underline">View all <ArrowUpRight className="w-3 h-3" /></Link>
           </div>
           <div className="space-y-2">
