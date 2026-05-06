@@ -9,7 +9,7 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { fmtRM } from "@/lib/format";
-import { Receipt, Upload, Trash2, Camera, Loader2, Pencil, Plus, Save } from "lucide-react";
+import { Receipt, Upload, Trash2, Camera, Loader2, Pencil, Plus, Save, Image as ImageIcon } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_auth/receipts")({ component: Receipts });
