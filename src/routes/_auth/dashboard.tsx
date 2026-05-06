@@ -5,12 +5,30 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { fmtRM, startOfMonth, startOfToday } from "@/lib/format";
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip } from "recharts";
-import { Upload, RefreshCw, ArrowUpRight, Wallet } from "lucide-react";
+import { Upload, RefreshCw, ArrowUpRight, Wallet, Home, Zap, Wifi, Car, Phone, CreditCard, ShoppingBag, Heart, Tv, Dumbbell, BookOpen, Receipt } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_auth/dashboard")({ component: Dashboard });
 
 const COLORS = ["oklch(0.22 0.06 255)","oklch(0.72 0.16 175)","oklch(0.78 0.16 75)","oklch(0.65 0.2 25)","oklch(0.55 0.18 290)","oklch(0.5 0.05 250)"];
+
+const EXPENSE_STYLES: { match: RegExp; icon: any; tint: string; fg: string }[] = [
+  { match: /rent|home|house|mortgage|apartment/i, icon: Home, tint: "bg-violet-500/10", fg: "text-violet-500" },
+  { match: /electric|power|energy|utility/i, icon: Zap, tint: "bg-amber-500/10", fg: "text-amber-500" },
+  { match: /wifi|internet|broadband/i, icon: Wifi, tint: "bg-sky-500/10", fg: "text-sky-500" },
+  { match: /car|fuel|petrol|transport|grab/i, icon: Car, tint: "bg-orange-500/10", fg: "text-orange-500" },
+  { match: /phone|mobile|telco|celcom|maxis|digi/i, icon: Phone, tint: "bg-emerald-500/10", fg: "text-emerald-500" },
+  { match: /loan|credit|debt|installment/i, icon: CreditCard, tint: "bg-rose-500/10", fg: "text-rose-500" },
+  { match: /grocer|food|market/i, icon: ShoppingBag, tint: "bg-pink-500/10", fg: "text-pink-500" },
+  { match: /insur|health|medical/i, icon: Heart, tint: "bg-red-500/10", fg: "text-red-500" },
+  { match: /netflix|spotify|stream|subscription|tv/i, icon: Tv, tint: "bg-fuchsia-500/10", fg: "text-fuchsia-500" },
+  { match: /gym|fitness|sport/i, icon: Dumbbell, tint: "bg-lime-500/10", fg: "text-lime-500" },
+  { match: /school|education|tuition|book/i, icon: BookOpen, tint: "bg-teal-500/10", fg: "text-teal-500" },
+];
+const styleFor = (name: string, category?: string) => {
+  const hay = `${name} ${category ?? ""}`;
+  return EXPENSE_STYLES.find(s => s.match.test(hay)) ?? { icon: Receipt, tint: "bg-muted", fg: "text-muted-foreground" };
+};
 
 function Dashboard() {
   const [items, setItems] = useState<any[]>([]);
@@ -171,19 +189,25 @@ function Dashboard() {
             </Link>
           </div>
           {fixed.length ? (
-            <div className="h-48 overflow-y-auto pr-1 space-y-2">
-              {fixed.map((f) => (
-                <div key={f.id} className="flex items-center justify-between text-sm py-1.5 border-b border-border/40 last:border-0">
-                  <div className="min-w-0">
-                    <div className="font-medium truncate">{f.name}</div>
-                    {f.category && <div className="text-[11px] text-muted-foreground truncate">{f.category}</div>}
-                  </div>
-                  <span className="font-semibold tabular-nums">{fmtRM(Number(f.amount))}</span>
-                </div>
-              ))}
-              <div className="flex items-center justify-between pt-2 text-xs text-muted-foreground">
-                <span>Total</span>
-                <span className="font-semibold text-foreground">
+            <div className="h-48 flex flex-col">
+              <div className="flex-1 overflow-y-auto pr-1 space-y-1.5">
+                {fixed.map((f) => {
+                  const s = styleFor(f.name, f.category);
+                  const Icon = s.icon;
+                  return (
+                    <div key={f.id} className="flex items-center gap-2.5 py-1">
+                      <div className={`w-8 h-8 rounded-lg ${s.tint} flex items-center justify-center shrink-0`}>
+                        <Icon className={`w-4 h-4 ${s.fg}`} />
+                      </div>
+                      <div className="font-medium text-sm truncate flex-1">{f.name}</div>
+                      <span className="font-semibold text-sm tabular-nums">{fmtRM(Number(f.amount))}</span>
+                    </div>
+                  );
+                })}
+              </div>
+              <div className="flex items-center justify-between pt-2 mt-1 border-t border-border/40 text-xs">
+                <span className="text-muted-foreground">Total</span>
+                <span className="font-semibold text-foreground tabular-nums">
                   {fmtRM(fixed.reduce((s, f) => s + Number(f.amount), 0))}
                 </span>
               </div>
