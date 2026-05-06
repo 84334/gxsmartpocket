@@ -1,7 +1,5 @@
 import { useMemo } from "react";
-import bunnyImg from "@/assets/bunny.png";
-import butterflyImg from "@/assets/butterfly.png";
-import birdImg from "@/assets/bird.png";
+import { DotLottieReact } from "@lottiefiles/dotlottie-react";
 
 type Mood = "happy" | "calm" | "rain" | "storm";
 
@@ -93,70 +91,15 @@ export function TreeWeather({ mood }: { mood: Mood }) {
 
       {/* Cute critters for happy */}
       {mood === "happy" && (
-        <>
-          {/* Bunny — jumps around the tree root */}
-          <div
-            className="absolute"
-            style={{
-              bottom: "6%",
-              left: "50%",
-              width: 56,
-              height: 56,
-              marginLeft: -28,
-              transformStyle: "preserve-3d",
-              animation: "bunny-orbit 6s linear infinite",
-            }}
-          >
-            <img
-              src={bunnyImg}
-              alt=""
-              className="w-full h-full object-contain drop-shadow-lg"
-              style={{ animation: "bunny-hop 0.9s ease-in-out infinite, spin-y 6s linear infinite" }}
-            />
-          </div>
-
-          {/* Bird — flies to the branches */}
-          <div
-            className="absolute"
-            style={{
-              top: "28%",
-              left: "50%",
-              width: 44,
-              height: 44,
-              marginLeft: -22,
-              transformStyle: "preserve-3d",
-              animation: "bird-orbit 7s linear infinite",
-            }}
-          >
-            <img
-              src={birdImg}
-              alt=""
-              className="w-full h-full object-contain drop-shadow-md"
-              style={{ animation: "bird-bob 1.1s ease-in-out infinite, spin-y 7s linear infinite reverse" }}
-            />
-          </div>
-
-          {/* Butterfly — orbits the leaves */}
-          <div
-            className="absolute"
-            style={{
-              top: "18%",
-              left: "50%",
-              width: 32,
-              height: 32,
-              marginLeft: -16,
-              transformStyle: "preserve-3d",
-              animation: "butterfly-orbit 5s linear infinite",
-            }}
-          >
-            <img
-              src={butterflyImg}
-              alt=""
-              className="w-full h-full object-contain"
-              style={{ animation: "butterfly-flap 0.4s ease-in-out infinite, spin-y 5s linear infinite" }}
-            />
-          </div>
-        </>
+        <div className="absolute inset-0">
+          <DotLottieReact
+            src="https://lottie.host/14627f1a-7381-464d-9f06-88abddaf6844/BVHucobYXe.lottie"
+            loop
+            autoplay
+            backgroundColor="transparent"
+            style={{ width: "100%", height: "100%" }}
+          />
+        </div>
       )}
 
       <style>{`
