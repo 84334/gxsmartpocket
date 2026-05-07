@@ -368,7 +368,9 @@ function Goals() {
     const curLongest = Number(pr?.longest_streak ?? 0);
     if (curLastDate === today) return;
     const yest = new Date(); yest.setDate(yest.getDate() - 1);
-    const yStr = yest.toISOString().slice(0, 10);
+    const ym = String(yest.getMonth() + 1).padStart(2, "0");
+    const yd = String(yest.getDate()).padStart(2, "0");
+    const yStr = `${yest.getFullYear()}-${ym}-${yd}`;
     const newStreak = curLastDate === yStr ? curStreak + 1 : 1;
     const newLongest = Math.max(curLongest, newStreak);
     await supabase.from("profiles").update({
