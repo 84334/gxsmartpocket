@@ -250,6 +250,62 @@ export type Database = {
         }
         Relationships: []
       }
+      savings_transactions: {
+        Row: {
+          amount: number
+          created_at: string
+          daily_limit: number | null
+          daily_spend: number | null
+          id: string
+          kind: string
+          note: string | null
+          occurred_on: string
+          pocket_id: string | null
+          remaining_budget: number | null
+          status: string | null
+          total_required: number | null
+          user_id: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          daily_limit?: number | null
+          daily_spend?: number | null
+          id?: string
+          kind: string
+          note?: string | null
+          occurred_on?: string
+          pocket_id?: string | null
+          remaining_budget?: number | null
+          status?: string | null
+          total_required?: number | null
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          daily_limit?: number | null
+          daily_spend?: number | null
+          id?: string
+          kind?: string
+          note?: string | null
+          occurred_on?: string
+          pocket_id?: string | null
+          remaining_budget?: number | null
+          status?: string | null
+          total_required?: number | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "savings_transactions_pocket_id_fkey"
+            columns: ["pocket_id"]
+            isOneToOne: false
+            referencedRelation: "savings_goals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
