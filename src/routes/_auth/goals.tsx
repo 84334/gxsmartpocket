@@ -422,11 +422,15 @@ function Goals() {
             <div className="text-4xl md:text-5xl font-semibold mt-2 tracking-tight">{fmtRM(totalSaved)}</div>
             <div className="text-sm text-white/60 mt-1.5">Across {list.length} pocket{list.length === 1 ? "" : "s"}</div>
           </div>
-          <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur border border-white/10">
+          <button
+            type="button"
+            onClick={() => setStreakOpen(true)}
+            className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur border border-white/10 hover:bg-white/15 transition-colors"
+          >
             <Flame className="w-4 h-4 text-white/90" />
             <span className="font-semibold">{streak}</span>
             <span className="text-white/60 text-sm">day streak</span>
-          </div>
+          </button>
         </div>
         {totalTarget > 0 && (
           <div className="relative mt-5">
