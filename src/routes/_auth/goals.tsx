@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { fmtRM, startOfToday, todayDate } from "@/lib/format";
-import { Plus, Trash2, AlertTriangle, Check, Flame, Info, History, Sparkles } from "lucide-react";
+import { Plus, Trash2, AlertTriangle, Check, Flame, Info, History, Sparkles, Clock, TrendingDown, Heart } from "lucide-react";
 import { toast } from "sonner";
 import { SavingsTree } from "@/components/SavingsTree";
 import {
@@ -52,13 +52,18 @@ function Goals() {
   const [txList, setTxList] = useState<any[]>([]);
   const [todayPlan, setTodayPlan] = useState<{ limit: number; spend: number; remaining: number; required: number; allocations: Array<{ id: string; title: string; amount: number; need: number }>; status: "success" | "partial" | "skipped" } | null>(null);
   const [suggestedDaily, setSuggestedDaily] = useState<string>("");
+  const [streakOpen, setStreakOpen] = useState(false);
+  const [overspendOpen, setOverspendOpen] = useState(false);
+  const [overspendDismissedAt, setOverspendDismissedAt] = useState<number>(0);
+  const [todayCategories, setTodayCategories] = useState<Array<{ category: string; total: number; essential: boolean }>>([]);
+  const STREAK_GOAL = 6;
 
   const load = async () => {
     const since = startOfToday();
     const [{ data: gs }, { data: pr }, { data: it }, { data: tx }] = await Promise.all([
       supabase.from("savings_goals").select("*").order("created_at", { ascending: false }),
       supabase.from("profiles").select("daily_spending_limit, streak_days, longest_streak, last_streak_date").maybeSingle(),
-      supabase.from("receipt_items").select("price,quantity,created_at").gte("created_at", since),
+      supabase.from("receipt_items").select("price,quantity,category,is_essential,created_at").gte("created_at", since),
       supabase.from("savings_transactions").select("*, savings_goals(title)").order("created_at", { ascending: false }).limit(80),
     ]);
     setList(gs ?? []);
@@ -74,19 +79,56 @@ function Goals() {
     setStreak(curStreak);
     setLongestStreak(Number(pr?.longest_streak ?? 0));
     setLastStreakDate(lastDate);
-    setTodaySpend((it ?? []).reduce((s, i: any) => s + Number(i.price) * Number(i.quantity), 0));
-    return { goals: gs ?? [], limit: Number(pr?.daily_spending_limit ?? 20), spend: (it ?? []).reduce((s, i: any) => s + Number(i.price) * Number(i.quantity), 0) };
+    const spend = (it ?? []).reduce((s, i: any) => s + Number(i.price) * Number(i.quantity), 0);
+    setTodaySpend(spend);
+    // Aggregate today's spending by category for the overspending popup
+    const catMap = new Map<string, { total: number; essentialTotal: number }>();
+    (it ?? []).forEach((i: any) => {
+      const k = i.category ?? "Others";
+      const total = Number(i.price) * Number(i.quantity);
+      const e = catMap.get(k) ?? { total: 0, essentialTotal: 0 };
+      e.total += total;
+      if (i.is_essential) e.essentialTotal += total;
+      catMap.set(k, e);
+    });
+    const cats = Array.from(catMap.entries())
+      .map(([category, v]) => ({ category, total: v.total, essential: v.essentialTotal >= v.total / 2 }))
+      .sort((a, b) => b.total - a.total);
+    setTodayCategories(cats);
+    return { goals: gs ?? [], limit: Number(pr?.daily_spending_limit ?? 20), spend };
   };
 
   useEffect(() => {
     (async () => {
       const ctx = await load();
-      if (autoRan.current) return;
-      autoRan.current = true;
-      await autoSaveToday(ctx.goals, ctx.limit, ctx.spend);
+      // Auto-save runs at 11:59 PM only — no longer instant on mount.
+      // If the user opens the app at/after 23:59 and we haven't yet saved
+      // for today, run the catch-up immediately.
+      const tryAutoSave = async () => {
+        const now = new Date();
+        const isWindow = now.getHours() === 23 && now.getMinutes() >= 59;
+        if (!isWindow) return;
+        if (autoRan.current) return;
+        autoRan.current = true;
+        const fresh = await load();
+        await autoSaveToday(fresh.goals, fresh.limit, fresh.spend);
+      };
+      await tryAutoSave();
+      const intId = window.setInterval(tryAutoSave, 30_000);
+      (cdRef as any).autoId = intId;
     })();
-    return () => { if (cdRef.current) window.clearInterval(cdRef.current); };
+    return () => {
+      if (cdRef.current) window.clearInterval(cdRef.current);
+      if ((cdRef as any).autoId) window.clearInterval((cdRef as any).autoId);
+    };
   }, []);
+
+  // Show overspending popup when user crosses the daily limit (once per "session of overspending")
+  useEffect(() => {
+    if (todaySpend > dailyLimit && Date.now() - overspendDismissedAt > 60_000) {
+      setOverspendOpen(true);
+    }
+  }, [todaySpend, dailyLimit]);
 
   const autoSaveToday = async (goals: any[], limit: number, spend: number) => {
     const today = todayDate();
@@ -326,7 +368,9 @@ function Goals() {
     const curLongest = Number(pr?.longest_streak ?? 0);
     if (curLastDate === today) return;
     const yest = new Date(); yest.setDate(yest.getDate() - 1);
-    const yStr = yest.toISOString().slice(0, 10);
+    const ym = String(yest.getMonth() + 1).padStart(2, "0");
+    const yd = String(yest.getDate()).padStart(2, "0");
+    const yStr = `${yest.getFullYear()}-${ym}-${yd}`;
     const newStreak = curLastDate === yStr ? curStreak + 1 : 1;
     const newLongest = Math.max(curLongest, newStreak);
     await supabase.from("profiles").update({
@@ -380,11 +424,15 @@ function Goals() {
             <div className="text-4xl md:text-5xl font-semibold mt-2 tracking-tight">{fmtRM(totalSaved)}</div>
             <div className="text-sm text-white/60 mt-1.5">Across {list.length} pocket{list.length === 1 ? "" : "s"}</div>
           </div>
-          <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur border border-white/10">
+          <button
+            type="button"
+            onClick={() => setStreakOpen(true)}
+            className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur border border-white/10 hover:bg-white/15 transition-colors"
+          >
             <Flame className="w-4 h-4 text-white/90" />
             <span className="font-semibold">{streak}</span>
             <span className="text-white/60 text-sm">day streak</span>
-          </div>
+          </button>
         </div>
         {totalTarget > 0 && (
           <div className="relative mt-5">
@@ -608,7 +656,7 @@ function Goals() {
                   })()
             }
           />
-          <SavingsTree streak={streak} goal={Math.max(30, longestStreak || 30)} />
+          <SavingsTree streak={streak} goal={Math.max(STREAK_GOAL, longestStreak || STREAK_GOAL)} />
         </div>
       </Card>
 
@@ -765,6 +813,144 @@ function Goals() {
               </div>
             )}
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Streak history dialog */}
+      <Dialog open={streakOpen} onOpenChange={setStreakOpen}>
+        <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Flame className="w-5 h-5 text-orange-500" /> Your savings streak
+            </DialogTitle>
+          </DialogHeader>
+          <div className="grid grid-cols-3 gap-2 text-center">
+            <Card className="p-3 rounded-xl"><div className="text-xs text-muted-foreground">Current</div><div className="text-2xl font-bold">{streak}</div></Card>
+            <Card className="p-3 rounded-xl"><div className="text-xs text-muted-foreground">Best</div><div className="text-2xl font-bold">{longestStreak}</div></Card>
+            <Card className="p-3 rounded-xl"><div className="text-xs text-muted-foreground">Goal</div><div className="text-2xl font-bold">{STREAK_GOAL}</div></Card>
+          </div>
+          <Progress value={Math.min(100, (streak / STREAK_GOAL) * 100)} />
+          <div>
+            <div className="text-xs uppercase tracking-wide text-muted-foreground mb-2">Daily history</div>
+            {(() => {
+              // Build map of occurred_on -> { saved, statuses }
+              const map = new Map<string, { saved: number; statuses: string[]; kinds: Set<string> }>();
+              txList.forEach((t: any) => {
+                const d = t.occurred_on || (t.created_at ? new Date(t.created_at).toISOString().slice(0,10) : "");
+                if (!d) return;
+                const e = map.get(d) ?? { saved: 0, statuses: [], kinds: new Set<string>() };
+                if (t.kind === "auto_save" || t.kind === "manual_save") e.saved += Number(t.amount);
+                if (t.status) e.statuses.push(t.status);
+                e.kinds.add(t.kind);
+                map.set(d, e);
+              });
+              const days = Array.from(map.entries()).sort((a, b) => b[0].localeCompare(a[0])).slice(0, 14);
+              if (days.length === 0) return <p className="text-sm text-muted-foreground text-center py-4">No streak history yet.</p>;
+              return (
+                <div className="space-y-1.5">
+                  {days.map(([d, info]) => {
+                    const allSkipped = info.statuses.every(s => s === "skipped") && info.saved <= 0;
+                    const hasPartial = info.statuses.includes("partial");
+                    const hasSuccess = info.statuses.includes("success");
+                    const status = allSkipped ? "failed" : hasPartial && !hasSuccess ? "partial" : hasPartial ? "partial" : "success";
+                    const label =
+                      status === "failed" ? "Failed / Reset" :
+                      status === "partial" ? "Partially successful" :
+                      "Fully successful";
+                    const color =
+                      status === "failed" ? "text-rose-500 bg-rose-500/10" :
+                      status === "partial" ? "text-amber-500 bg-amber-500/10" :
+                      "text-emerald-500 bg-emerald-500/10";
+                    return (
+                      <div key={d} className="flex items-center justify-between gap-2 py-2 px-3 rounded-lg bg-muted/40">
+                        <div className="min-w-0">
+                          <div className="text-sm font-medium">{new Date(d).toLocaleDateString("en-MY", { weekday: "short", day: "numeric", month: "short" })}</div>
+                          <div className={`text-[11px] inline-block px-2 py-0.5 rounded-full mt-0.5 ${color}`}>{label}</div>
+                        </div>
+                        <div className="text-sm font-semibold tabular-nums text-emerald-500">+{fmtRM(info.saved)}</div>
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })()}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Overspending AI popup */}
+      <Dialog open={overspendOpen} onOpenChange={(o) => { setOverspendOpen(o); if (!o) setOverspendDismissedAt(Date.now()); }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Heart className="w-5 h-5 text-rose-500" /> Hey, let's check in
+            </DialogTitle>
+          </DialogHeader>
+          {(() => {
+            const over = Math.max(0, todaySpend - dailyLimit);
+            const topGoal = list
+              .filter(g => !g.completed_at && Number(g.daily_save_amount) > 0)
+              .sort((a, b) => {
+                const da = a.target_date ? new Date(a.target_date).getTime() : Infinity;
+                const db = b.target_date ? new Date(b.target_date).getTime() : Infinity;
+                return da - db;
+              })[0];
+            const topCat = todayCategories.find(c => !c.essential) ?? todayCategories[0];
+            const trimDaily = 5;
+            let weeksEarlier = 0;
+            if (topGoal) {
+              const remaining = Math.max(0, Number(topGoal.target_amount) - Number(topGoal.current_amount));
+              const cur = Math.max(0.5, Number(topGoal.daily_save_amount));
+              const daysNow = Math.ceil(remaining / cur);
+              const daysFaster = Math.ceil(remaining / (cur + trimDaily));
+              weeksEarlier = Math.max(0, Math.round((daysNow - daysFaster) / 7));
+            }
+            return (
+              <div className="space-y-3">
+                <Card className="p-4 rounded-2xl bg-gradient-to-br from-rose-500/10 to-amber-500/10 border-rose-500/20">
+                  <p className="text-sm">
+                    You've gone <span className="font-semibold text-foreground">{fmtRM(over)}</span> over today's <span className="font-medium">{fmtRM(dailyLimit)}</span> limit.
+                    {topGoal && <> This may slow your <span className="font-semibold text-foreground">{topGoal.title}</span> savings.</>}
+                  </p>
+                </Card>
+                {topCat && (
+                  <Card className="p-4 rounded-2xl border-border/60">
+                    <div className="flex items-center gap-2 text-xs uppercase tracking-wide text-muted-foreground mb-1">
+                      <TrendingDown className="w-3.5 h-3.5" /> Where it went
+                    </div>
+                    <p className="text-sm">
+                      Most spending today was on <span className="font-semibold text-foreground">{topCat.category}</span> ({fmtRM(topCat.total)}).
+                      {!topCat.essential && " That's mostly non-essential — easy to trim tomorrow."}
+                    </p>
+                  </Card>
+                )}
+                <Card className="p-4 rounded-2xl border-border/60">
+                  <div className="flex items-center gap-2 text-xs uppercase tracking-wide text-muted-foreground mb-1">
+                    <Flame className="w-3.5 h-3.5" /> Streak heads-up
+                  </div>
+                  <p className="text-sm">
+                    If nothing is left at 11:59 PM, today's auto-save will be partial — your <span className="font-semibold">{streak}-day streak</span> may pause.
+                  </p>
+                </Card>
+                <Card className="p-4 rounded-2xl bg-gradient-to-br from-emerald-500/10 to-violet-500/10 border-emerald-500/20">
+                  <div className="flex items-center gap-2 text-xs uppercase tracking-wide text-muted-foreground mb-1">
+                    <Sparkles className="w-3.5 h-3.5 text-emerald-500" /> Small win
+                  </div>
+                  <p className="text-sm">
+                    Trim just <span className="font-semibold text-foreground">RM5/day</span>
+                    {topGoal && weeksEarlier > 0 && <> and you'd hit <span className="font-semibold">{topGoal.title}</span> about <span className="font-semibold text-foreground">{weeksEarlier} week{weeksEarlier === 1 ? "" : "s"}</span> earlier.</>}
+                    {!(topGoal && weeksEarlier > 0) && " — and your future self will thank you."}
+                  </p>
+                </Card>
+              </div>
+            );
+          })()}
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => { setOverspendOpen(false); setOverspendDismissedAt(Date.now()); }}>Got it</Button>
+            <Button onClick={() => { setOverspendOpen(false); setOverspendDismissedAt(Date.now()); }} className="bg-primary text-primary-foreground hover:opacity-90">
+              I'll be mindful
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
