@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { fmtRM, startOfToday, todayDate } from "@/lib/format";
-import { Plus, Trash2, AlertTriangle, Check, Flame, Info, History, Sparkles } from "lucide-react";
+import { Plus, Trash2, AlertTriangle, Check, Flame, Info, History, Sparkles, Clock, TrendingDown, Heart } from "lucide-react";
 import { toast } from "sonner";
 import { SavingsTree } from "@/components/SavingsTree";
 import {
@@ -52,13 +52,18 @@ function Goals() {
   const [txList, setTxList] = useState<any[]>([]);
   const [todayPlan, setTodayPlan] = useState<{ limit: number; spend: number; remaining: number; required: number; allocations: Array<{ id: string; title: string; amount: number; need: number }>; status: "success" | "partial" | "skipped" } | null>(null);
   const [suggestedDaily, setSuggestedDaily] = useState<string>("");
+  const [streakOpen, setStreakOpen] = useState(false);
+  const [overspendOpen, setOverspendOpen] = useState(false);
+  const [overspendDismissedAt, setOverspendDismissedAt] = useState<number>(0);
+  const [todayCategories, setTodayCategories] = useState<Array<{ category: string; total: number; essential: boolean }>>([]);
+  const STREAK_GOAL = 6;
 
   const load = async () => {
     const since = startOfToday();
     const [{ data: gs }, { data: pr }, { data: it }, { data: tx }] = await Promise.all([
       supabase.from("savings_goals").select("*").order("created_at", { ascending: false }),
       supabase.from("profiles").select("daily_spending_limit, streak_days, longest_streak, last_streak_date").maybeSingle(),
-      supabase.from("receipt_items").select("price,quantity,created_at").gte("created_at", since),
+      supabase.from("receipt_items").select("price,quantity,category,is_essential,created_at").gte("created_at", since),
       supabase.from("savings_transactions").select("*, savings_goals(title)").order("created_at", { ascending: false }).limit(80),
     ]);
     setList(gs ?? []);
@@ -74,19 +79,56 @@ function Goals() {
     setStreak(curStreak);
     setLongestStreak(Number(pr?.longest_streak ?? 0));
     setLastStreakDate(lastDate);
-    setTodaySpend((it ?? []).reduce((s, i: any) => s + Number(i.price) * Number(i.quantity), 0));
-    return { goals: gs ?? [], limit: Number(pr?.daily_spending_limit ?? 20), spend: (it ?? []).reduce((s, i: any) => s + Number(i.price) * Number(i.quantity), 0) };
+    const spend = (it ?? []).reduce((s, i: any) => s + Number(i.price) * Number(i.quantity), 0);
+    setTodaySpend(spend);
+    // Aggregate today's spending by category for the overspending popup
+    const catMap = new Map<string, { total: number; essentialTotal: number }>();
+    (it ?? []).forEach((i: any) => {
+      const k = i.category ?? "Others";
+      const total = Number(i.price) * Number(i.quantity);
+      const e = catMap.get(k) ?? { total: 0, essentialTotal: 0 };
+      e.total += total;
+      if (i.is_essential) e.essentialTotal += total;
+      catMap.set(k, e);
+    });
+    const cats = Array.from(catMap.entries())
+      .map(([category, v]) => ({ category, total: v.total, essential: v.essentialTotal >= v.total / 2 }))
+      .sort((a, b) => b.total - a.total);
+    setTodayCategories(cats);
+    return { goals: gs ?? [], limit: Number(pr?.daily_spending_limit ?? 20), spend };
   };
 
   useEffect(() => {
     (async () => {
       const ctx = await load();
-      if (autoRan.current) return;
-      autoRan.current = true;
-      await autoSaveToday(ctx.goals, ctx.limit, ctx.spend);
+      // Auto-save runs at 11:59 PM only — no longer instant on mount.
+      // If the user opens the app at/after 23:59 and we haven't yet saved
+      // for today, run the catch-up immediately.
+      const tryAutoSave = async () => {
+        const now = new Date();
+        const isWindow = now.getHours() === 23 && now.getMinutes() >= 59;
+        if (!isWindow) return;
+        if (autoRan.current) return;
+        autoRan.current = true;
+        const fresh = await load();
+        await autoSaveToday(fresh.goals, fresh.limit, fresh.spend);
+      };
+      await tryAutoSave();
+      const intId = window.setInterval(tryAutoSave, 30_000);
+      (cdRef as any).autoId = intId;
     })();
-    return () => { if (cdRef.current) window.clearInterval(cdRef.current); };
+    return () => {
+      if (cdRef.current) window.clearInterval(cdRef.current);
+      if ((cdRef as any).autoId) window.clearInterval((cdRef as any).autoId);
+    };
   }, []);
+
+  // Show overspending popup when user crosses the daily limit (once per "session of overspending")
+  useEffect(() => {
+    if (todaySpend > dailyLimit && Date.now() - overspendDismissedAt > 60_000) {
+      setOverspendOpen(true);
+    }
+  }, [todaySpend, dailyLimit]);
 
   const autoSaveToday = async (goals: any[], limit: number, spend: number) => {
     const today = todayDate();
@@ -608,7 +650,7 @@ function Goals() {
                   })()
             }
           />
-          <SavingsTree streak={streak} goal={Math.max(30, longestStreak || 30)} />
+          <SavingsTree streak={streak} goal={Math.max(STREAK_GOAL, longestStreak || STREAK_GOAL)} />
         </div>
       </Card>
 
