@@ -696,6 +696,77 @@ function Goals() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <Dialog open={historyOpen} onOpenChange={setHistoryOpen}>
+        <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
+          <DialogHeader><DialogTitle>Savings activity</DialogTitle></DialogHeader>
+          {/* Today plan */}
+          <Card className="p-4 rounded-2xl border-border/60">
+            <div className="text-xs uppercase tracking-wide text-muted-foreground mb-1">Today</div>
+            <div className="flex items-center justify-between text-sm">
+              <span>Spent {fmtRM(todaySpend)} of {fmtRM(dailyLimit)}</span>
+              <span className="font-semibold">{fmtRM(Math.max(0, dailyLimit - todaySpend))} left to save</span>
+            </div>
+            <Progress value={Math.min(100, (todaySpend / Math.max(1, dailyLimit)) * 100)} className="mt-2" />
+            {todayPlan && (
+              <div className="mt-3">
+                <div className={`text-xs font-medium mb-2 ${todayPlan.status === "success" ? "text-emerald-500" : todayPlan.status === "partial" ? "text-amber-500" : "text-muted-foreground"}`}>
+                  {todayPlan.status === "success" && "✓ Auto-save complete — all pockets funded"}
+                  {todayPlan.status === "partial" && "◐ Partial auto-save — split proportionally"}
+                  {todayPlan.status === "skipped" && "— No budget left for auto-save today"}
+                </div>
+                {todayPlan.allocations.length > 0 && (
+                  <div className="space-y-1.5">
+                    {todayPlan.allocations.map(a => (
+                      <div key={a.id} className="flex items-center justify-between text-xs">
+                        <span className="truncate">{a.title}</span>
+                        <span className="tabular-nums">
+                          <span className="font-semibold">{fmtRM(a.amount)}</span>
+                          <span className="text-muted-foreground"> / {fmtRM(a.need)}</span>
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </Card>
+
+          <div>
+            <div className="text-xs uppercase tracking-wide text-muted-foreground mb-2 mt-1">Recent activity</div>
+            {txList.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-6">No activity yet.</p>
+            ) : (
+              <div className="space-y-1.5">
+                {txList.map((t: any) => {
+                  const sign = Number(t.amount) < 0 ? "−" : "+";
+                  const color = t.kind === "withdraw" ? "text-rose-500" : t.status === "partial" ? "text-amber-500" : "text-emerald-500";
+                  const label =
+                    t.kind === "auto_save" ? "Auto-save" :
+                    t.kind === "manual_save" ? "Manual save" :
+                    t.kind === "withdraw" ? "Withdraw" : t.kind;
+                  return (
+                    <div key={t.id} className="flex items-center justify-between gap-2 py-2 px-3 rounded-lg bg-muted/40">
+                      <div className="min-w-0">
+                        <div className="text-sm font-medium truncate">
+                          {label} <span className="text-muted-foreground">· {t.savings_goals?.title ?? "—"}</span>
+                        </div>
+                        <div className="text-[11px] text-muted-foreground">
+                          {new Date(t.created_at).toLocaleString("en-MY", { dateStyle: "medium", timeStyle: "short" })}
+                          {t.note ? ` · ${t.note}` : ""}
+                        </div>
+                      </div>
+                      <div className={`text-sm font-semibold tabular-nums ${color}`}>
+                        {sign}{fmtRM(Math.abs(Number(t.amount)))}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
