@@ -352,6 +352,12 @@ function Goals() {
     if (!v || v <= 0) return toast.error("Enter an amount");
     if (v > Number(g.current_amount)) return toast.error("Exceeds saved amount");
     await supabase.from("savings_goals").update({ current_amount: Number(g.current_amount) - v }).eq("id", g.id);
+    const { data: u } = await supabase.auth.getUser();
+    if (u.user) {
+      await supabase.from("savings_transactions").insert({
+        user_id: u.user.id, pocket_id: g.id, kind: "withdraw", amount: -v, status: "success",
+      });
+    }
     toast.success(`Withdrew ${fmtRM(v)}`);
     setWithdrawId(null); load();
   };
@@ -437,6 +443,10 @@ function Goals() {
       {/* Pockets list */}
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-semibold">Your pockets</h2>
+        <div className="flex items-center gap-2">
+        <Button size="sm" variant="outline" className="rounded-full px-3" onClick={() => setHistoryOpen(true)}>
+          <History className="w-4 h-4" /> History
+        </Button>
         <Dialog open={openNew} onOpenChange={setOpenNew}>
           <DialogTrigger asChild>
             <Button size="sm" className="bg-gx-ink text-white hover:opacity-90 rounded-full px-4"><Plus className="w-4 h-4" /> New pocket</Button>
@@ -449,6 +459,21 @@ function Goals() {
                 <div><Label className="text-xs">Target (RM)</Label><Input type="number" placeholder="e.g. 1000" className="bg-background border-border/80 placeholder:text-muted-foreground/60" value={target} onChange={e => setTarget(e.target.value)} /></div>
                 <div><Label className="text-xs">By date (optional)</Label><Input type="date" className="bg-background border-border/80" value={date} onChange={e => setDate(e.target.value)} /></div>
               </div>
+              {Number(target) > 0 && (
+                <div className="rounded-xl bg-gradient-to-br from-violet-500/10 to-emerald-500/10 border border-violet-500/20 p-3">
+                  <div className="flex items-center gap-2 text-xs font-medium text-foreground mb-2">
+                    <Sparkles className="w-3.5 h-3.5 text-gx-violet" />
+                    AI suggestion
+                  </div>
+                  <p className="text-xs text-muted-foreground mb-2">
+                    Save about <span className="font-semibold text-foreground">RM{suggestedDaily || "0.00"}/day</span>{date ? " to hit it on time." : " to reach it in 30 days."} You can adjust below.
+                  </p>
+                  <div>
+                    <Label className="text-xs">Daily auto-save (RM)</Label>
+                    <Input type="number" step="0.01" value={suggestedDaily} onChange={e => setSuggestedDaily(e.target.value)} />
+                  </div>
+                </div>
+              )}
             </div>
             <DialogFooter>
               <Button variant="ghost" onClick={() => setOpenNew(false)}>Cancel</Button>
@@ -456,6 +481,7 @@ function Goals() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
 
       {list.length ? (
