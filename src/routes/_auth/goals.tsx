@@ -601,10 +601,10 @@ function Goals() {
                     const active = list.filter(g => !g.completed_at && Number(g.daily_save_amount) > 0);
                     if (todaySpend > dailyLimit) return "storm";
                     if (active.length === 0) return "calm";
-                    const allSaved = active.every(g => g.last_saved_on === todayDate());
-                    if (allSaved) return "happy";
-                    const someSaved = active.some(g => g.last_saved_on === todayDate());
-                    return someSaved ? "calm" : "rain";
+                    const fullySaved = active.every(g => g.last_saved_on === todayDate());
+                    if (fullySaved) return "happy";
+                    // Anyone partially saved or nothing saved → rainy (not broken)
+                    return "rain";
                   })()
             }
           />
