@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { fmtRM, startOfToday, todayDate } from "@/lib/format";
-import { Plus, Trash2, AlertTriangle, Check, Flame, Info } from "lucide-react";
+import { Plus, Trash2, AlertTriangle, Check, Flame, Info, History, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { SavingsTree } from "@/components/SavingsTree";
 import {
@@ -48,27 +48,29 @@ function Goals() {
   const [deleteTarget, setDeleteTarget] = useState<string>("balance");
   const cdRef = useRef<number | null>(null);
   const autoRan = useRef(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [txList, setTxList] = useState<any[]>([]);
+  const [todayPlan, setTodayPlan] = useState<{ limit: number; spend: number; remaining: number; required: number; allocations: Array<{ id: string; title: string; amount: number; need: number }>; status: "success" | "partial" | "skipped" } | null>(null);
+  const [suggestedDaily, setSuggestedDaily] = useState<string>("");
 
   const load = async () => {
     const since = startOfToday();
-    const [{ data: gs }, { data: pr }, { data: it }] = await Promise.all([
+    const [{ data: gs }, { data: pr }, { data: it }, { data: tx }] = await Promise.all([
       supabase.from("savings_goals").select("*").order("created_at", { ascending: false }),
       supabase.from("profiles").select("daily_spending_limit, streak_days, longest_streak, last_streak_date").maybeSingle(),
       supabase.from("receipt_items").select("price,quantity,created_at").gte("created_at", since),
+      supabase.from("savings_transactions").select("*, savings_goals(title)").order("created_at", { ascending: false }).limit(80),
     ]);
     setList(gs ?? []);
+    setTxList(tx ?? []);
     setDailyLimit(Number(pr?.daily_spending_limit ?? 20));
     setLimitDraft(String(Number(pr?.daily_spending_limit ?? 20)));
     let curStreak = Number(pr?.streak_days ?? 0);
     const lastDate = (pr as any)?.last_streak_date ?? null;
     const today = todayDate();
-    const yest = new Date(); yest.setDate(yest.getDate() - 1);
-    const yStr = yest.toISOString().slice(0, 10);
-    if (curStreak > 0 && lastDate !== today && lastDate !== yStr) {
-      const { data: u } = await supabase.auth.getUser();
-      if (u.user) await supabase.from("profiles").update({ streak_days: 0 }).eq("id", u.user.id);
-      curStreak = 0;
-    }
+    // Streak no longer auto-resets to 0 here. Missing a day just stops the
+    // counter from advancing — it's preserved until the user saves again,
+    // at which point bumpStreakOnSave() decides whether to continue or restart.
     setStreak(curStreak);
     setLongestStreak(Number(pr?.longest_streak ?? 0));
     setLastStreakDate(lastDate);
@@ -103,8 +105,20 @@ function Goals() {
       return Number(b.daily_save_amount) - Number(a.daily_save_amount);
     });
     const remaining = Math.max(0, limit - spend);
-    if (remaining <= 0) return;
     const totalRequired = pending.reduce((s, g) => s + Number(g.daily_save_amount), 0);
+    const { data: u } = await supabase.auth.getUser();
+    if (remaining <= 0) {
+      // Even with nothing to allocate, log the skipped run and update the plan view.
+      if (u.user) {
+        await supabase.from("savings_transactions").insert({
+          user_id: u.user.id, kind: "auto_save", amount: 0, daily_limit: limit,
+          daily_spend: spend, remaining_budget: 0, total_required: totalRequired,
+          status: "skipped", note: "No budget left after spending",
+        });
+      }
+      setTodayPlan({ limit, spend, remaining: 0, required: totalRequired, allocations: pending.map(g => ({ id: g.id, title: g.title, amount: 0, need: Number(g.daily_save_amount) })), status: "skipped" });
+      return;
+    }
     const allocations = new Map<string, number>();
     if (remaining >= totalRequired) {
       pending.forEach(g => allocations.set(g.id, Number(g.daily_save_amount)));
@@ -131,15 +145,27 @@ function Goals() {
       }
     }
     let savedTotal = 0;
+    const allocList: Array<{ id: string; title: string; amount: number; need: number }> = [];
     for (const g of pending) {
       const apply = Number(allocations.get(g.id) || 0);
+      allocList.push({ id: g.id, title: g.title, amount: apply, need: Number(g.daily_save_amount) });
       if (apply <= 0) continue;
       await supabase.from("savings_goals").update({
         current_amount: Number(g.current_amount) + apply,
         last_saved_on: today,
       }).eq("id", g.id);
       savedTotal += apply;
+      if (u.user) {
+        await supabase.from("savings_transactions").insert({
+          user_id: u.user.id, pocket_id: g.id, kind: "auto_save",
+          amount: apply, daily_limit: limit, daily_spend: spend,
+          remaining_budget: remaining, total_required: totalRequired,
+          status: apply >= Number(g.daily_save_amount) ? "success" : "partial",
+        });
+      }
     }
+    const status: "success" | "partial" | "skipped" = savedTotal <= 0 ? "skipped" : (savedTotal >= totalRequired ? "success" : "partial");
+    setTodayPlan({ limit, spend, remaining, required: totalRequired, allocations: allocList, status });
     if (savedTotal > 0) {
       toast.success(`Saved ${fmtRM(savedTotal)} today`);
       await bumpStreakOnSave();
@@ -147,15 +173,32 @@ function Goals() {
     load();
   };
 
+  const suggestForCreate = () => {
+    const tgt = Number(target);
+    if (!tgt || tgt <= 0) { setSuggestedDaily(""); return; }
+    let days = 30;
+    if (date) {
+      const dt = new Date(date).getTime();
+      const today = new Date(); today.setHours(0,0,0,0);
+      days = Math.max(1, Math.ceil((dt - today.getTime()) / 86400000));
+    }
+    const perDay = Math.max(0.5, Math.ceil((tgt / days) * 100) / 100);
+    setSuggestedDaily(perDay.toFixed(2));
+  };
+
+  useEffect(() => { suggestForCreate(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [target, date]);
+
   const add = async () => {
     if (!title || !target) return;
     const { data: u } = await supabase.auth.getUser();
     if (!u.user) return;
+    const dailyVal = Number(suggestedDaily) || 0;
     const { error } = await supabase.from("savings_goals").insert({
-      user_id: u.user.id, title, target_amount: Number(target), target_date: date || null,
+      user_id: u.user.id, title, target_amount: Number(target),
+      target_date: date || null, daily_save_amount: dailyVal,
     });
     if (error) return toast.error(error.message);
-    setTitle(""); setTarget(""); setDate(""); setOpenNew(false); load();
+    setTitle(""); setTarget(""); setDate(""); setSuggestedDaily(""); setOpenNew(false); load();
   };
 
   const updateCurrent = async (id: string, v: number) => {
@@ -169,7 +212,16 @@ function Goals() {
       patch.daily_save_amount = 0;
     }
     await supabase.from("savings_goals").update(patch).eq("id", id);
-    if (v > Number(prev.current_amount)) await bumpStreakOnSave();
+    if (v > Number(prev.current_amount)) {
+      const delta = v - Number(prev.current_amount);
+      const { data: u } = await supabase.auth.getUser();
+      if (u.user) {
+        await supabase.from("savings_transactions").insert({
+          user_id: u.user.id, pocket_id: id, kind: "manual_save", amount: delta, status: "success",
+        });
+      }
+      await bumpStreakOnSave();
+    }
     if (justCompleted) setCelebrateGoal({ ...prev, ...patch });
     load();
   };
@@ -300,6 +352,12 @@ function Goals() {
     if (!v || v <= 0) return toast.error("Enter an amount");
     if (v > Number(g.current_amount)) return toast.error("Exceeds saved amount");
     await supabase.from("savings_goals").update({ current_amount: Number(g.current_amount) - v }).eq("id", g.id);
+    const { data: u } = await supabase.auth.getUser();
+    if (u.user) {
+      await supabase.from("savings_transactions").insert({
+        user_id: u.user.id, pocket_id: g.id, kind: "withdraw", amount: -v, status: "success",
+      });
+    }
     toast.success(`Withdrew ${fmtRM(v)}`);
     setWithdrawId(null); load();
   };
@@ -385,6 +443,10 @@ function Goals() {
       {/* Pockets list */}
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-semibold">Your pockets</h2>
+        <div className="flex items-center gap-2">
+        <Button size="sm" variant="outline" className="rounded-full px-3" onClick={() => setHistoryOpen(true)}>
+          <History className="w-4 h-4" /> History
+        </Button>
         <Dialog open={openNew} onOpenChange={setOpenNew}>
           <DialogTrigger asChild>
             <Button size="sm" className="bg-gx-ink text-white hover:opacity-90 rounded-full px-4"><Plus className="w-4 h-4" /> New pocket</Button>
@@ -397,6 +459,21 @@ function Goals() {
                 <div><Label className="text-xs">Target (RM)</Label><Input type="number" placeholder="e.g. 1000" className="bg-background border-border/80 placeholder:text-muted-foreground/60" value={target} onChange={e => setTarget(e.target.value)} /></div>
                 <div><Label className="text-xs">By date (optional)</Label><Input type="date" className="bg-background border-border/80" value={date} onChange={e => setDate(e.target.value)} /></div>
               </div>
+              {Number(target) > 0 && (
+                <div className="rounded-xl bg-gradient-to-br from-violet-500/10 to-emerald-500/10 border border-violet-500/20 p-3">
+                  <div className="flex items-center gap-2 text-xs font-medium text-foreground mb-2">
+                    <Sparkles className="w-3.5 h-3.5 text-gx-violet" />
+                    AI suggestion
+                  </div>
+                  <p className="text-xs text-muted-foreground mb-2">
+                    Save about <span className="font-semibold text-foreground">RM{suggestedDaily || "0.00"}/day</span>{date ? " to hit it on time." : " to reach it in 30 days."} You can adjust below.
+                  </p>
+                  <div>
+                    <Label className="text-xs">Daily auto-save (RM)</Label>
+                    <Input type="number" step="0.01" value={suggestedDaily} onChange={e => setSuggestedDaily(e.target.value)} />
+                  </div>
+                </div>
+              )}
             </div>
             <DialogFooter>
               <Button variant="ghost" onClick={() => setOpenNew(false)}>Cancel</Button>
@@ -404,6 +481,7 @@ function Goals() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
 
       {list.length ? (
@@ -523,10 +601,10 @@ function Goals() {
                     const active = list.filter(g => !g.completed_at && Number(g.daily_save_amount) > 0);
                     if (todaySpend > dailyLimit) return "storm";
                     if (active.length === 0) return "calm";
-                    const allSaved = active.every(g => g.last_saved_on === todayDate());
-                    if (allSaved) return "happy";
-                    const someSaved = active.some(g => g.last_saved_on === todayDate());
-                    return someSaved ? "calm" : "rain";
+                    const fullySaved = active.every(g => g.last_saved_on === todayDate());
+                    if (fullySaved) return "happy";
+                    // Anyone partially saved or nothing saved → rainy (not broken)
+                    return "rain";
                   })()
             }
           />
@@ -618,6 +696,77 @@ function Goals() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <Dialog open={historyOpen} onOpenChange={setHistoryOpen}>
+        <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
+          <DialogHeader><DialogTitle>Savings activity</DialogTitle></DialogHeader>
+          {/* Today plan */}
+          <Card className="p-4 rounded-2xl border-border/60">
+            <div className="text-xs uppercase tracking-wide text-muted-foreground mb-1">Today</div>
+            <div className="flex items-center justify-between text-sm">
+              <span>Spent {fmtRM(todaySpend)} of {fmtRM(dailyLimit)}</span>
+              <span className="font-semibold">{fmtRM(Math.max(0, dailyLimit - todaySpend))} left to save</span>
+            </div>
+            <Progress value={Math.min(100, (todaySpend / Math.max(1, dailyLimit)) * 100)} className="mt-2" />
+            {todayPlan && (
+              <div className="mt-3">
+                <div className={`text-xs font-medium mb-2 ${todayPlan.status === "success" ? "text-emerald-500" : todayPlan.status === "partial" ? "text-amber-500" : "text-muted-foreground"}`}>
+                  {todayPlan.status === "success" && "✓ Auto-save complete — all pockets funded"}
+                  {todayPlan.status === "partial" && "◐ Partial auto-save — split proportionally"}
+                  {todayPlan.status === "skipped" && "— No budget left for auto-save today"}
+                </div>
+                {todayPlan.allocations.length > 0 && (
+                  <div className="space-y-1.5">
+                    {todayPlan.allocations.map(a => (
+                      <div key={a.id} className="flex items-center justify-between text-xs">
+                        <span className="truncate">{a.title}</span>
+                        <span className="tabular-nums">
+                          <span className="font-semibold">{fmtRM(a.amount)}</span>
+                          <span className="text-muted-foreground"> / {fmtRM(a.need)}</span>
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </Card>
+
+          <div>
+            <div className="text-xs uppercase tracking-wide text-muted-foreground mb-2 mt-1">Recent activity</div>
+            {txList.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-6">No activity yet.</p>
+            ) : (
+              <div className="space-y-1.5">
+                {txList.map((t: any) => {
+                  const sign = Number(t.amount) < 0 ? "−" : "+";
+                  const color = t.kind === "withdraw" ? "text-rose-500" : t.status === "partial" ? "text-amber-500" : "text-emerald-500";
+                  const label =
+                    t.kind === "auto_save" ? "Auto-save" :
+                    t.kind === "manual_save" ? "Manual save" :
+                    t.kind === "withdraw" ? "Withdraw" : t.kind;
+                  return (
+                    <div key={t.id} className="flex items-center justify-between gap-2 py-2 px-3 rounded-lg bg-muted/40">
+                      <div className="min-w-0">
+                        <div className="text-sm font-medium truncate">
+                          {label} <span className="text-muted-foreground">· {t.savings_goals?.title ?? "—"}</span>
+                        </div>
+                        <div className="text-[11px] text-muted-foreground">
+                          {new Date(t.created_at).toLocaleString("en-MY", { dateStyle: "medium", timeStyle: "short" })}
+                          {t.note ? ` · ${t.note}` : ""}
+                        </div>
+                      </div>
+                      <div className={`text-sm font-semibold tabular-nums ${color}`}>
+                        {sign}{fmtRM(Math.abs(Number(t.amount)))}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
