@@ -47,7 +47,6 @@ function Goals() {
   const [deleteGoal, setDeleteGoal] = useState<any | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<string>("balance");
   const cdRef = useRef<number | null>(null);
-  const autoRan = useRef(false);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [txList, setTxList] = useState<any[]>([]);
   const [todayPlan, setTodayPlan] = useState<{ limit: number; spend: number; remaining: number; required: number; allocations: Array<{ id: string; title: string; amount: number; need: number }>; status: "success" | "partial" | "skipped" } | null>(null);
@@ -99,27 +98,9 @@ function Goals() {
   };
 
   useEffect(() => {
-    (async () => {
-      const ctx = await load();
-      // Auto-save runs at 11:59 PM only — no longer instant on mount.
-      // If the user opens the app at/after 23:59 and we haven't yet saved
-      // for today, run the catch-up immediately.
-      const tryAutoSave = async () => {
-        const now = new Date();
-        const isWindow = now.getHours() === 23 && now.getMinutes() >= 59;
-        if (!isWindow) return;
-        if (autoRan.current) return;
-        autoRan.current = true;
-        const fresh = await load();
-        await autoSaveToday(fresh.goals, fresh.limit, fresh.spend);
-      };
-      await tryAutoSave();
-      const intId = window.setInterval(tryAutoSave, 30_000);
-      (cdRef as any).autoId = intId;
-    })();
+    load();
     return () => {
       if (cdRef.current) window.clearInterval(cdRef.current);
-      if ((cdRef as any).autoId) window.clearInterval((cdRef as any).autoId);
     };
   }, []);
 
@@ -129,91 +110,6 @@ function Goals() {
       setOverspendOpen(true);
     }
   }, [todaySpend, dailyLimit]);
-
-  const autoSaveToday = async (goals: any[], limit: number, spend: number) => {
-    const today = todayDate();
-    const pending = goals.filter(g =>
-      Number(g.daily_save_amount) > 0 &&
-      g.last_saved_on !== today &&
-      !g.completed_at &&
-      Number(g.current_amount) < Number(g.target_amount)
-    );
-    if (!pending.length) return;
-    // Priority: nearest deadline first, then larger daily requirement
-    pending.sort((a, b) => {
-      const da = a.target_date ? new Date(a.target_date).getTime() : Infinity;
-      const db = b.target_date ? new Date(b.target_date).getTime() : Infinity;
-      if (da !== db) return da - db;
-      return Number(b.daily_save_amount) - Number(a.daily_save_amount);
-    });
-    const remaining = Math.max(0, limit - spend);
-    const totalRequired = pending.reduce((s, g) => s + Number(g.daily_save_amount), 0);
-    const { data: u } = await supabase.auth.getUser();
-    if (remaining <= 0) {
-      // Even with nothing to allocate, log the skipped run and update the plan view.
-      if (u.user) {
-        await supabase.from("savings_transactions").insert({
-          user_id: u.user.id, kind: "auto_save", amount: 0, daily_limit: limit,
-          daily_spend: spend, remaining_budget: 0, total_required: totalRequired,
-          status: "skipped", note: "No budget left after spending",
-        });
-      }
-      setTodayPlan({ limit, spend, remaining: 0, required: totalRequired, allocations: pending.map(g => ({ id: g.id, title: g.title, amount: 0, need: Number(g.daily_save_amount) })), status: "skipped" });
-      return;
-    }
-    const allocations = new Map<string, number>();
-    if (remaining >= totalRequired) {
-      pending.forEach(g => allocations.set(g.id, Number(g.daily_save_amount)));
-    } else if (remaining <= 1) {
-      // Too small to split — give entirely to highest-priority goal
-      allocations.set(pending[0].id, remaining);
-    } else {
-      // Proportional split based on each goal's required daily savings, capped at need
-      const weights = pending.map(g => Math.min(Number(g.daily_save_amount), remaining));
-      const wSum = weights.reduce((s, w) => s + w, 0) || 1;
-      let leftover = remaining;
-      pending.forEach((g, i) => {
-        const ideal = (weights[i] / wSum) * remaining;
-        const cap = Number(g.daily_save_amount);
-        const alloc = Math.min(cap, Math.round(ideal * 100) / 100);
-        allocations.set(g.id, alloc);
-        leftover -= alloc;
-      });
-      // Assign rounding remainder to highest-priority goal (cap at its requirement)
-      if (leftover > 0.001) {
-        const top = pending[0];
-        const cur = allocations.get(top.id) || 0;
-        allocations.set(top.id, Math.min(Number(top.daily_save_amount), cur + leftover));
-      }
-    }
-    let savedTotal = 0;
-    const allocList: Array<{ id: string; title: string; amount: number; need: number }> = [];
-    for (const g of pending) {
-      const apply = Number(allocations.get(g.id) || 0);
-      allocList.push({ id: g.id, title: g.title, amount: apply, need: Number(g.daily_save_amount) });
-      if (apply <= 0) continue;
-      await supabase.from("savings_goals").update({
-        current_amount: Number(g.current_amount) + apply,
-        last_saved_on: today,
-      }).eq("id", g.id);
-      savedTotal += apply;
-      if (u.user) {
-        await supabase.from("savings_transactions").insert({
-          user_id: u.user.id, pocket_id: g.id, kind: "auto_save",
-          amount: apply, daily_limit: limit, daily_spend: spend,
-          remaining_budget: remaining, total_required: totalRequired,
-          status: apply >= Number(g.daily_save_amount) ? "success" : "partial",
-        });
-      }
-    }
-    const status: "success" | "partial" | "skipped" = savedTotal <= 0 ? "skipped" : (savedTotal >= totalRequired ? "success" : "partial");
-    setTodayPlan({ limit, spend, remaining, required: totalRequired, allocations: allocList, status });
-    if (savedTotal > 0) {
-      toast.success(`Saved ${fmtRM(savedTotal)} today`);
-      await bumpStreakOnSave();
-    }
-    load();
-  };
 
   const suggestForCreate = () => {
     const tgt = Number(target);
@@ -356,22 +252,33 @@ function Goals() {
     const { data: u } = await supabase.auth.getUser();
     if (!u.user) return;
     const today = todayDate();
-    // Always read fresh from DB — React state may be stale when called
-    // immediately after load() (e.g. from autoSaveToday).
-    const { data: pr } = await supabase
+    const [{ data: pr }, { data: txs }] = await Promise.all([
+      supabase
       .from("profiles")
       .select("streak_days, longest_streak, last_streak_date")
       .eq("id", u.user.id)
-      .maybeSingle();
-    const curLastDate = (pr as any)?.last_streak_date ?? null;
-    const curStreak = Number(pr?.streak_days ?? 0);
+      .maybeSingle(),
+      supabase
+        .from("savings_transactions")
+        .select("occurred_on")
+        .eq("user_id", u.user.id)
+        .in("kind", ["auto_save", "manual_save"])
+        .gt("amount", 0)
+        .in("status", ["success", "partial"])
+        .gte("occurred_on", new Date(Date.now() - 45 * 86400000).toISOString().slice(0, 10)),
+    ]);
+    const savedDays = new Set((txs ?? []).map((t: any) => t.occurred_on));
+    let scan = today;
+    let newStreak = 0;
+    while (savedDays.has(scan)) {
+      newStreak += 1;
+      const d = new Date(`${scan}T00:00:00`);
+      d.setDate(d.getDate() - 1);
+      const m = String(d.getMonth() + 1).padStart(2, "0");
+      const day = String(d.getDate()).padStart(2, "0");
+      scan = `${d.getFullYear()}-${m}-${day}`;
+    }
     const curLongest = Number(pr?.longest_streak ?? 0);
-    if (curLastDate === today) return;
-    const yest = new Date(); yest.setDate(yest.getDate() - 1);
-    const ym = String(yest.getMonth() + 1).padStart(2, "0");
-    const yd = String(yest.getDate()).padStart(2, "0");
-    const yStr = `${yest.getFullYear()}-${ym}-${yd}`;
-    const newStreak = curLastDate === yStr ? curStreak + 1 : 1;
     const newLongest = Math.max(curLongest, newStreak);
     await supabase.from("profiles").update({
       streak_days: newStreak, longest_streak: newLongest, last_streak_date: today,
