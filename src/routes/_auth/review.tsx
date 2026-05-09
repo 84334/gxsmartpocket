@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { fmtRM } from "@/lib/format";
-import { Trash2, Plus, Save, Users } from "lucide-react";
+import { Trash2, Plus, Save, Users, UserPlus, X, Check, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import { applyRulebook, rulebookReason, type Rulebook } from "@/lib/rulebook";
 
@@ -23,6 +23,14 @@ type Item = {
   category: string;
   is_essential: boolean;
   split_count: number; // 1 = not shared
+  tags: TagEntry[];
+};
+
+type TagEntry = {
+  email: string;
+  user_id?: string | null;
+  display_name?: string | null;
+  status: "idle" | "checking" | "found" | "missing";
 };
 
 function ReviewPage() {
@@ -66,6 +74,7 @@ function ReviewPage() {
           category: it.category ?? "Others",
           is_essential: it.is_essential ?? true,
           split_count: 1,
+          tags: [] as TagEntry[],
         };
         return { ...base, is_essential: applyRulebook(base, rb) };
       }));
@@ -77,7 +86,35 @@ function ReviewPage() {
 
   const remove = (i: number) => setItems(prev => prev.filter((_, idx) => idx !== i));
 
-  const add = () => setItems(prev => [...prev, { name: "", price: 0, quantity: 1, category: "Others", is_essential: true, split_count: 1 }]);
+  const add = () => setItems(prev => [...prev, { name: "", price: 0, quantity: 1, category: "Others", is_essential: true, split_count: 1, tags: [] }]);
+
+  const setSplitCount = (i: number, count: number) => {
+    const c = Math.max(1, count || 1);
+    setItems(prev => prev.map((it, idx) => {
+      if (idx !== i) return it;
+      const slots = Math.max(0, c - 1);
+      const tags = it.tags.slice(0, slots);
+      while (tags.length < slots) tags.push({ email: "", status: "idle" });
+      return { ...it, split_count: c, tags };
+    }));
+  };
+
+  const updateTag = (i: number, ti: number, patch: Partial<TagEntry>) =>
+    setItems(prev => prev.map((it, idx) => idx === i ? {
+      ...it,
+      tags: it.tags.map((t, j) => j === ti ? { ...t, ...patch } : t),
+    } : it));
+
+  const checkTag = async (i: number, ti: number, email: string) => {
+    const trimmed = email.trim();
+    if (!trimmed) { updateTag(i, ti, { user_id: null, display_name: null, status: "idle" }); return; }
+    updateTag(i, ti, { status: "checking" });
+    const { data, error } = await (supabase as any).rpc("find_user_by_email", { _email: trimmed });
+    if (error) { updateTag(i, ti, { status: "missing", user_id: null, display_name: null }); return; }
+    const row = Array.isArray(data) ? data[0] : data;
+    if (row?.user_id) updateTag(i, ti, { status: "found", user_id: row.user_id, display_name: row.display_name });
+    else updateTag(i, ti, { status: "missing", user_id: null, display_name: null });
+  };
 
   const lineTotal = (it: Item) => (it.price * it.quantity) / Math.max(1, it.split_count);
   const total = items.reduce((s, it) => s + lineTotal(it), 0);
@@ -111,8 +148,34 @@ function ReviewPage() {
         const { error: iErr } = await supabase.from("receipt_items").insert(rows);
         if (iErr) throw iErr;
       }
+
+      // Build split requests for tagged friends
+      const splitRows: any[] = [];
+      for (const it of items) {
+        if (it.split_count <= 1) continue;
+        const sharePerPerson = Number(((it.price * it.quantity) / it.split_count).toFixed(2));
+        for (const tag of it.tags) {
+          if (!tag.email.trim()) continue;
+          if (tag.status !== "found" || !tag.user_id) continue;
+          if (tag.user_id === u.user.id) continue;
+          splitRows.push({
+            receipt_id: receipt.id,
+            item_name: it.name || "Shared item",
+            merchant: merchant || null,
+            from_user: u.user.id,
+            to_user_id: tag.user_id,
+            to_label: tag.display_name ?? tag.email.trim(),
+            amount: sharePerPerson,
+            status: "pending",
+          });
+        }
+      }
+      if (splitRows.length) {
+        const { error: sErr } = await (supabase as any).from("split_requests").insert(splitRows);
+        if (sErr) throw sErr;
+      }
       sessionStorage.removeItem("pending_receipt");
-      toast.success("Saved to receipts");
+      toast.success(splitRows.length ? `Saved · ${splitRows.length} split request${splitRows.length>1?"s":""} sent` : "Saved to receipts");
       navigate({ to: "/receipts" });
     } catch (e: any) {
       toast.error(e.message ?? "Failed to save");
@@ -202,13 +265,43 @@ function ReviewPage() {
                   <Users className="w-4 h-4 text-muted-foreground" />
                   <span className="text-muted-foreground text-xs">Split between</span>
                   <Input type="number" min="1" className="w-16 h-8" value={it.split_count}
-                    onChange={e => update(i, { split_count: Math.max(1, Number(e.target.value) || 1) })} />
+                    onChange={e => setSplitCount(i, Number(e.target.value) || 1)} />
                   <span className="text-xs text-muted-foreground">person(s)</span>
                 </div>
                 <div className="ml-auto text-sm">
                   Your share: <span className="font-semibold">{fmtRM(lineTotal(it))}</span>
                 </div>
               </div>
+
+              {it.split_count > 1 && (
+                <div className="rounded-md border border-dashed border-border p-3 space-y-2 bg-muted/30">
+                  <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+                    <UserPlus className="w-3.5 h-3.5" /> Tag {it.split_count - 1} friend{it.split_count > 2 ? "s" : ""} who owes {fmtRM(lineTotal(it))}
+                  </div>
+                  {it.tags.map((tag, ti) => (
+                    <div key={ti} className="flex items-center gap-2">
+                      <Input
+                        type="email"
+                        placeholder="friend@email.com (optional)"
+                        value={tag.email}
+                        onChange={e => updateTag(i, ti, { email: e.target.value, status: "idle", user_id: null, display_name: null })}
+                        onBlur={e => checkTag(i, ti, e.target.value)}
+                        className="h-8 text-xs flex-1"
+                      />
+                      <div className="w-32 text-xs">
+                        {tag.status === "checking" && <span className="text-muted-foreground">Checking…</span>}
+                        {tag.status === "found" && (
+                          <span className="inline-flex items-center gap-1 text-success"><Check className="w-3 h-3" />{tag.display_name || "Found"}</span>
+                        )}
+                        {tag.status === "missing" && tag.email.trim() && (
+                          <span className="inline-flex items-center gap-1 text-warning"><AlertCircle className="w-3 h-3" />Not on app</span>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                  <p className="text-[11px] text-muted-foreground">Tagged friends with an account will get a notification to pay you back. Leave blank if they're not on the app.</p>
+                </div>
+              )}
             </div>
           ))}
           {!items.length && <p className="text-sm text-muted-foreground text-center py-4">No items. Add one to continue.</p>}
