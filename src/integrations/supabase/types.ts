@@ -311,7 +311,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      process_daily_auto_savings: {
+        Args: { p_run_date?: string }
+        Returns: Json
+      }
+      recalculate_savings_streak: {
+        Args: { _through_date?: string; _user_id: string }
+        Returns: number
+      }
     }
     Enums: {
       receipt_status: "processing" | "completed" | "failed"
