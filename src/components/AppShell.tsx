@@ -1,14 +1,16 @@
 import { Link, useNavigate, useRouterState, Outlet } from "@tanstack/react-router";
-import { Receipt, LayoutDashboard, Target, Wallet, LogOut, Sparkles } from "lucide-react";
+import { Receipt, LayoutDashboard, Target, Wallet, LogOut, Sparkles, Users } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { NotificationsBell } from "@/components/NotificationsBell";
 
 const nav = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/receipts", label: "Receipts", icon: Receipt },
   { to: "/expenses", label: "Expenses", icon: Wallet },
   { to: "/goals", label: "Pockets", icon: Target },
+  { to: "/splits", label: "Splits", icon: Users },
 ];
 
 export function AppShell() {
@@ -42,7 +44,8 @@ export function AppShell() {
             </Link>
           );
         })}
-        <div className="mt-auto">
+        <div className="mt-auto flex items-center justify-between">
+          <NotificationsBell />
           <Button variant="ghost" className="w-full justify-start text-sidebar-foreground hover:bg-sidebar-accent" onClick={signOut}>
             <LogOut className="w-4 h-4" /> Sign out
           </Button>
@@ -54,10 +57,13 @@ export function AppShell() {
           <Link to="/dashboard" className="flex items-center gap-2 font-bold">
             <Sparkles className="w-5 h-5 text-accent" /> GX Smart Pocket
           </Link>
-          <Button size="sm" variant="ghost" className="text-sidebar-foreground" onClick={signOut}><LogOut className="w-4 h-4" /></Button>
+          <div className="flex items-center gap-1">
+            <NotificationsBell />
+            <Button size="sm" variant="ghost" className="text-sidebar-foreground" onClick={signOut}><LogOut className="w-4 h-4" /></Button>
+          </div>
         </header>
         <main className="flex-1 p-4 md:p-8 max-w-6xl w-full mx-auto"><Outlet /></main>
-        <nav className="md:hidden sticky bottom-0 bg-sidebar text-sidebar-foreground border-t border-sidebar-border grid grid-cols-4">
+        <nav className="md:hidden sticky bottom-0 bg-sidebar text-sidebar-foreground border-t border-sidebar-border grid grid-cols-5">
           {nav.map(n => {
             const active = path.startsWith(n.to);
             return (

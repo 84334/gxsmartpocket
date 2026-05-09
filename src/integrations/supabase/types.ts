@@ -68,6 +68,42 @@ export type Database = {
         }
         Relationships: []
       }
+      notifications: {
+        Row: {
+          body: string | null
+          created_at: string
+          data: Json
+          id: string
+          read_at: string | null
+          related_id: string | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          body?: string | null
+          created_at?: string
+          data?: Json
+          id?: string
+          read_at?: string | null
+          related_id?: string | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          body?: string | null
+          created_at?: string
+          data?: Json
+          id?: string
+          read_at?: string | null
+          related_id?: string | null
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           allocation_allowance_pct: number
@@ -86,6 +122,7 @@ export type Database = {
           streak_days: number
           streak_goal_days: number
           updated_at: string
+          wallet_adjustment: number
         }
         Insert: {
           allocation_allowance_pct?: number
@@ -104,6 +141,7 @@ export type Database = {
           streak_days?: number
           streak_goal_days?: number
           updated_at?: string
+          wallet_adjustment?: number
         }
         Update: {
           allocation_allowance_pct?: number
@@ -122,6 +160,7 @@ export type Database = {
           streak_days?: number
           streak_goal_days?: number
           updated_at?: string
+          wallet_adjustment?: number
         }
         Relationships: []
       }
@@ -306,11 +345,64 @@ export type Database = {
           },
         ]
       }
+      split_requests: {
+        Row: {
+          amount: number
+          created_at: string
+          from_user: string
+          id: string
+          item_name: string
+          merchant: string | null
+          note: string | null
+          paid_at: string | null
+          receipt_id: string | null
+          status: string
+          to_label: string | null
+          to_user_id: string | null
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          from_user: string
+          id?: string
+          item_name?: string
+          merchant?: string | null
+          note?: string | null
+          paid_at?: string | null
+          receipt_id?: string | null
+          status?: string
+          to_label?: string | null
+          to_user_id?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          from_user?: string
+          id?: string
+          item_name?: string
+          merchant?: string | null
+          note?: string | null
+          paid_at?: string | null
+          receipt_id?: string | null
+          status?: string
+          to_label?: string | null
+          to_user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      find_user_by_email: {
+        Args: { _email: string }
+        Returns: {
+          display_name: string
+          user_id: string
+        }[]
+      }
+      pay_split_request: { Args: { _split_id: string }; Returns: Json }
       process_daily_auto_savings: {
         Args: { p_run_date?: string }
         Returns: Json

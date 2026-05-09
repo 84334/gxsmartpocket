@@ -38,6 +38,7 @@ function Dashboard() {
   const [goals, setGoals] = useState<any[]>([]);
   const [dailyLimit, setDailyLimit] = useState(0);
   const [todaySpend, setTodaySpend] = useState(0);
+  const [walletAdj, setWalletAdj] = useState(0);
   const [genLoading, setGenLoading] = useState(false);
   const [spentView, setSpentView] = useState<"total" | "split">("total");
   const isActive = useRouterState({ select: s => s.location.pathname === "/dashboard" });
@@ -47,7 +48,7 @@ function Dashboard() {
     const today = startOfToday();
     const [{ data: it }, { data: pr }, { data: fx }, { data: ins }, { data: gl }, { data: tdy }] = await Promise.all([
       supabase.from("receipt_items").select("*").gte("created_at", since),
-      supabase.from("profiles").select("monthly_income, daily_spending_limit").maybeSingle(),
+      supabase.from("profiles").select("monthly_income, daily_spending_limit, wallet_adjustment").maybeSingle(),
       supabase.from("fixed_expenses").select("*"),
       supabase.from("insights").select("*").order("created_at", { ascending: false }).limit(4),
       supabase.from("savings_goals").select("current_amount,target_amount,title"),
@@ -56,6 +57,7 @@ function Dashboard() {
     setItems(it ?? []);
     setIncome(Number(pr?.monthly_income ?? 0));
     setDailyLimit(Number(pr?.daily_spending_limit ?? 0));
+    setWalletAdj(Number((pr as any)?.wallet_adjustment ?? 0));
     setFixed(fx ?? []);
     setInsights(ins ?? []);
     setGoals(gl ?? []);
@@ -81,7 +83,7 @@ function Dashboard() {
   const nonEssentialSpend = totalSpend - essentialSpend;
   const fixedTotal = fixed.reduce((s, i) => s + Number(i.amount), 0);
   const totalSavings = goals.reduce((s, g) => s + Number(g.current_amount || 0), 0);
-  const remaining = income - fixedTotal - totalSpend - totalSavings;
+  const remaining = income - fixedTotal - totalSpend - totalSavings + walletAdj;
   const remainingDaily = Math.max(0, dailyLimit - todaySpend);
   const dailyPct = dailyLimit > 0 ? Math.min(100, (todaySpend / dailyLimit) * 100) : 0;
 
