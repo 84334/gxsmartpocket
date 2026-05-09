@@ -252,22 +252,33 @@ function Goals() {
     const { data: u } = await supabase.auth.getUser();
     if (!u.user) return;
     const today = todayDate();
-    // Always read fresh from DB — React state may be stale when called
-    // immediately after load() (e.g. from autoSaveToday).
-    const { data: pr } = await supabase
+    const [{ data: pr }, { data: txs }] = await Promise.all([
+      supabase
       .from("profiles")
       .select("streak_days, longest_streak, last_streak_date")
       .eq("id", u.user.id)
-      .maybeSingle();
-    const curLastDate = (pr as any)?.last_streak_date ?? null;
-    const curStreak = Number(pr?.streak_days ?? 0);
+      .maybeSingle(),
+      supabase
+        .from("savings_transactions")
+        .select("occurred_on")
+        .eq("user_id", u.user.id)
+        .in("kind", ["auto_save", "manual_save"])
+        .gt("amount", 0)
+        .in("status", ["success", "partial"])
+        .gte("occurred_on", new Date(Date.now() - 45 * 86400000).toISOString().slice(0, 10)),
+    ]);
+    const savedDays = new Set((txs ?? []).map((t: any) => t.occurred_on));
+    let scan = today;
+    let newStreak = 0;
+    while (savedDays.has(scan)) {
+      newStreak += 1;
+      const d = new Date(`${scan}T00:00:00`);
+      d.setDate(d.getDate() - 1);
+      const m = String(d.getMonth() + 1).padStart(2, "0");
+      const day = String(d.getDate()).padStart(2, "0");
+      scan = `${d.getFullYear()}-${m}-${day}`;
+    }
     const curLongest = Number(pr?.longest_streak ?? 0);
-    if (curLastDate === today) return;
-    const yest = new Date(); yest.setDate(yest.getDate() - 1);
-    const ym = String(yest.getMonth() + 1).padStart(2, "0");
-    const yd = String(yest.getDate()).padStart(2, "0");
-    const yStr = `${yest.getFullYear()}-${ym}-${yd}`;
-    const newStreak = curLastDate === yStr ? curStreak + 1 : 1;
     const newLongest = Math.max(curLongest, newStreak);
     await supabase.from("profiles").update({
       streak_days: newStreak, longest_streak: newLongest, last_streak_date: today,
