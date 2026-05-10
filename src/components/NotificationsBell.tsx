@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { fmtRM } from "@/lib/format";
 import { toast } from "sonner";
-import { Link } from "@tanstack/react-router";
+// no router link needed
 
 type Notif = {
   id: string;
@@ -30,7 +30,24 @@ export function NotificationsBell() {
       .select("*")
       .order("created_at", { ascending: false })
       .limit(20);
-    setItems((data as Notif[]) ?? []);
+    const next = (data as Notif[]) ?? [];
+    // detect newly arrived split_paid notifications and surface success modal
+    setItems(prev => {
+      const prevIds = new Set(prev.map(p => p.id));
+      next.forEach(n => {
+        if (!prevIds.has(n.id) && n.type === "split_paid" && !n.read_at) {
+          window.dispatchEvent(new CustomEvent("smartreceipt:payment-success", {
+            detail: {
+              direction: "received",
+              amount: Number(n.data?.amount ?? 0),
+              name: (n.title?.split(" paid ")[0]) || "Friend",
+              item: n.body || undefined,
+            },
+          }));
+        }
+      });
+      return next;
+    });
   };
 
   useEffect(() => {
@@ -66,7 +83,14 @@ export function NotificationsBell() {
     const { error } = await (supabase as any).rpc("pay_split_request", { _split_id: n.related_id });
     setBusy(null);
     if (error) return toast.error(error.message);
-    toast.success("Paid!");
+    window.dispatchEvent(new CustomEvent("smartreceipt:payment-success", {
+      detail: {
+        direction: "sent",
+        amount: Number(n.data?.amount ?? 0),
+        name: (n.title?.split(" requested ")[0]) || "Friend",
+        item: n.data?.item || n.body || undefined,
+      },
+    }));
     await (supabase as any).from("notifications").update({ read_at: new Date().toISOString() }).eq("id", n.id);
     window.dispatchEvent(new Event("smartreceipt:balance-updated"));
     load();
@@ -87,7 +111,7 @@ export function NotificationsBell() {
       <PopoverContent align="end" className="w-80 p-0 overflow-hidden">
         <div className="px-4 py-3 border-b flex items-center justify-between">
           <div className="font-semibold text-sm">Notifications</div>
-          <Link to="/splits" onClick={() => setOpen(false)} className="text-xs text-primary hover:underline">View all splits</Link>
+          <span className="text-[10px] text-muted-foreground">{items.length} recent</span>
         </div>
         <div className="max-h-[420px] overflow-y-auto">
           {!items.length && (
