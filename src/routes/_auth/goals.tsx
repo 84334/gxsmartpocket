@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { fmtRM, startOfToday, todayDate } from "@/lib/format";
-import { Plus, Trash2, AlertTriangle, Check, Flame, Info, History, Sparkles, Clock, TrendingDown, Heart } from "lucide-react";
+import { Plus, Trash2, AlertTriangle, Check, Flame, Info, History, Sparkles, Clock, TrendingDown, Heart, Wand2 } from "lucide-react";
 import { toast } from "sonner";
 import { SavingsTree } from "@/components/SavingsTree";
 import {
@@ -55,6 +55,7 @@ function Goals() {
   const [overspendOpen, setOverspendOpen] = useState(false);
   const [overspendDismissedAt, setOverspendDismissedAt] = useState<number>(0);
   const [todayCategories, setTodayCategories] = useState<Array<{ category: string; total: number; essential: boolean }>>([]);
+  const [coachGoal, setCoachGoal] = useState<any | null>(null);
   const STREAK_GOAL = 6;
 
   const load = async () => {
@@ -412,7 +413,7 @@ function Goals() {
               <div><Label className="text-xs">What for?</Label><Input placeholder="Trip to Korea" className="bg-background border-border/80 placeholder:text-muted-foreground/60" value={title} onChange={e => setTitle(e.target.value)} /></div>
               <div className="grid grid-cols-2 gap-2">
                 <div><Label className="text-xs">Target (RM)</Label><Input type="number" placeholder="e.g. 1000" className="bg-background border-border/80 placeholder:text-muted-foreground/60" value={target} onChange={e => setTarget(e.target.value)} /></div>
-                <div><Label className="text-xs">By date (optional)</Label><Input type="date" className="bg-background border-border/80" value={date} onChange={e => setDate(e.target.value)} /></div>
+                <div><Label className="text-xs">By date (optional)</Label><Input type="date" className="bg-background border-border/80 [color-scheme:dark] [&::-webkit-calendar-picker-indicator]:invert [&::-webkit-calendar-picker-indicator]:opacity-100 [&::-webkit-calendar-picker-indicator]:cursor-pointer" value={date} onChange={e => setDate(e.target.value)} /></div>
               </div>
               {Number(target) > 0 && (
                 <div className="rounded-xl bg-gradient-to-br from-violet-500/10 to-emerald-500/10 border border-violet-500/20 p-3">
@@ -453,15 +454,27 @@ function Goals() {
                     <div className="font-semibold truncate">{g.title}</div>
                     <div className="text-xs text-muted-foreground mt-0.5">{fmtRM(g.current_amount)} of {fmtRM(g.target_amount)}</div>
                   </div>
-                  {completed ? (
-                    <span className="flex items-center gap-1 text-[10px] font-medium text-primary bg-primary/15 px-2 py-1 rounded-full shrink-0">
-                      🎉 Completed
-                    </span>
-                  ) : savedT && (
-                    <span className="flex items-center gap-1 text-[10px] font-medium text-primary bg-primary/10 px-2 py-1 rounded-full shrink-0">
-                      <Check className="w-3 h-3" /> Today
-                    </span>
-                  )}
+                  <div className="flex items-center gap-1 shrink-0">
+                    {completed ? (
+                      <span className="flex items-center gap-1 text-[10px] font-medium text-primary bg-primary/15 px-2 py-1 rounded-full">
+                        🎉 Completed
+                      </span>
+                    ) : savedT && (
+                      <span className="flex items-center gap-1 text-[10px] font-medium text-primary bg-primary/10 px-2 py-1 rounded-full">
+                        <Check className="w-3 h-3" /> Today
+                      </span>
+                    )}
+                    {!completed && (
+                      <button
+                        type="button"
+                        onClick={() => setCoachGoal(g)}
+                        title="AI assistant"
+                        className="w-8 h-8 rounded-full bg-gradient-to-br from-violet-500/20 to-emerald-500/20 hover:from-violet-500/30 hover:to-emerald-500/30 flex items-center justify-center transition"
+                      >
+                        <Wand2 className="w-3.5 h-3.5 text-gx-violet" />
+                      </button>
+                    )}
+                  </div>
                 </div>
                 <Progress value={pct} className="mt-3" />
                 <div className="flex items-center justify-between mt-2 text-xs text-muted-foreground">
@@ -858,6 +871,98 @@ function Goals() {
               I'll be mindful
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Per-pocket AI coach */}
+      <Dialog open={!!coachGoal} onOpenChange={(o) => !o && setCoachGoal(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Wand2 className="w-5 h-5 text-gx-violet" /> AI assistant · {coachGoal?.title}
+            </DialogTitle>
+          </DialogHeader>
+          {coachGoal && (() => {
+            const remaining = Math.max(0, Number(coachGoal.target_amount) - Number(coachGoal.current_amount));
+            const daily = Math.max(0, Number(coachGoal.daily_save_amount || 0));
+            const daysAtRate = daily > 0 ? Math.ceil(remaining / daily) : null;
+            const eta = daysAtRate != null ? new Date(Date.now() + daysAtRate * 86400000) : null;
+            let suggestedDaily = daily;
+            let suggestionReason = "";
+            if (coachGoal.target_date) {
+              const dt = new Date(coachGoal.target_date).getTime();
+              const today = new Date(); today.setHours(0,0,0,0);
+              const daysLeft = Math.max(1, Math.ceil((dt - today.getTime()) / 86400000));
+              const need = Math.ceil((remaining / daysLeft) * 100) / 100;
+              if (need > daily) {
+                suggestedDaily = need;
+                suggestionReason = `to hit your target by ${new Date(coachGoal.target_date).toLocaleDateString("en-MY", { day: "numeric", month: "short", year: "numeric" })}`;
+              } else {
+                suggestionReason = "you're on track 🎯";
+              }
+            } else if (daily === 0) {
+              suggestedDaily = Math.max(1, Math.ceil((remaining / 30) * 100) / 100);
+              suggestionReason = "to finish in about a month";
+            }
+            const totalOtherDaily = list
+              .filter(g => g.id !== coachGoal.id && !g.completed_at)
+              .reduce((s, g) => s + Number(g.daily_save_amount || 0), 0);
+            const headroom = Math.max(0, dailyLimit - totalOtherDaily);
+            const cappedSuggest = Math.min(suggestedDaily, headroom || suggestedDaily);
+            return (
+              <div className="space-y-3">
+                <Card className="p-4 rounded-2xl bg-gradient-to-br from-violet-500/10 to-emerald-500/10 border-violet-500/20">
+                  <div className="flex items-center gap-2 text-xs uppercase tracking-wide text-muted-foreground mb-1">
+                    <Clock className="w-3.5 h-3.5" /> Estimated time
+                  </div>
+                  {daysAtRate != null && eta ? (
+                    <p className="text-sm">
+                      At <span className="font-semibold">{fmtRM(daily)}/day</span>, you'll reach{" "}
+                      <span className="font-semibold">{fmtRM(coachGoal.target_amount)}</span> in about{" "}
+                      <span className="font-semibold text-foreground">{daysAtRate} day{daysAtRate === 1 ? "" : "s"}</span>{" "}
+                      <span className="text-muted-foreground">(~{eta.toLocaleDateString("en-MY", { day: "numeric", month: "short" })})</span>.
+                    </p>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">Set a daily auto-save below to see your finish date.</p>
+                  )}
+                </Card>
+                <Card className="p-4 rounded-2xl border-border/60">
+                  <div className="flex items-center gap-2 text-xs uppercase tracking-wide text-muted-foreground mb-1">
+                    <Sparkles className="w-3.5 h-3.5 text-emerald-500" /> Recommended daily
+                  </div>
+                  <p className="text-sm">
+                    Try <span className="font-semibold text-foreground">{fmtRM(cappedSuggest)}/day</span>
+                    {suggestionReason && <> {suggestionReason}.</>}
+                  </p>
+                  {cappedSuggest < suggestedDaily && (
+                    <p className="text-[11px] text-warning mt-1">Limited by your daily budget headroom of {fmtRM(headroom)}.</p>
+                  )}
+                </Card>
+                <Card className="p-4 rounded-2xl border-border/60">
+                  <div className="flex items-center gap-2 text-xs uppercase tracking-wide text-muted-foreground mb-2">
+                    <Heart className="w-3.5 h-3.5 text-rose-500" /> Tips to speed up
+                  </div>
+                  <ul className="text-sm space-y-1.5 list-disc pl-4 text-muted-foreground">
+                    {todaySpend > dailyLimit && <li>You're over today's spend limit — trim non-essentials to protect this pocket's auto-save.</li>}
+                    <li>Round up small purchases and drop the change into <span className="text-foreground font-medium">Save Extra</span>.</li>
+                    {daily === 0 && <li>Set any daily auto-save (even RM1) to start the streak and keep momentum.</li>}
+                    <li>Skip one non-essential treat per week (~RM10) to finish ~{Math.max(1, Math.round((remaining / Math.max(daily + 10, 10)) / 7))} weeks faster.</li>
+                  </ul>
+                </Card>
+                <Button
+                  className="w-full bg-primary text-primary-foreground"
+                  onClick={async () => {
+                    await updateDaily(coachGoal.id, cappedSuggest);
+                    toast.success(`Auto-save updated to ${fmtRM(cappedSuggest)}/day`);
+                    setCoachGoal(null);
+                  }}
+                  disabled={cappedSuggest <= 0 || cappedSuggest === daily}
+                >
+                  Apply {fmtRM(cappedSuggest)}/day
+                </Button>
+              </div>
+            );
+          })()}
         </DialogContent>
       </Dialog>
     </div>
