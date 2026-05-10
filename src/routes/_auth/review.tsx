@@ -89,7 +89,7 @@ function ReviewPage() {
   const add = () => setItems(prev => [...prev, { name: "", price: 0, quantity: 1, category: "Others", is_essential: true, split_count: 1, tags: [] }]);
 
   const setSplitCount = (i: number, count: number) => {
-    const c = Math.max(1, count || 1);
+    const c = Math.max(0, count);
     setItems(prev => prev.map((it, idx) => {
       if (idx !== i) return it;
       const slots = Math.max(0, c - 1);
@@ -264,8 +264,19 @@ function ReviewPage() {
                 <div className="flex items-center gap-2">
                   <Users className="w-4 h-4 text-muted-foreground" />
                   <span className="text-muted-foreground text-xs">Split between</span>
-                  <Input type="number" min="1" className="w-16 h-8" value={it.split_count}
-                    onChange={e => setSplitCount(i, Number(e.target.value) || 1)} />
+                  <Input
+                    type="number"
+                    min="1"
+                    inputMode="numeric"
+                    className="w-16 h-8"
+                    value={it.split_count === 0 ? "" : it.split_count}
+                    onChange={e => {
+                      const raw = e.target.value;
+                      if (raw === "") setSplitCount(i, 0);
+                      else setSplitCount(i, parseInt(raw, 10) || 0);
+                    }}
+                    onBlur={() => { if (it.split_count < 1) setSplitCount(i, 1); }}
+                  />
                   <span className="text-xs text-muted-foreground">person(s)</span>
                 </div>
                 <div className="ml-auto text-sm">
