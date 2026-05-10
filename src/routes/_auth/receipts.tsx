@@ -9,7 +9,7 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { fmtRM } from "@/lib/format";
-import { Receipt, Upload, Trash2, Camera, Loader2, Pencil, Plus, Save } from "lucide-react";
+import { Receipt, Upload, Trash2, Camera, Loader2, Pencil, Plus, Save, Users, Check, Clock, Loader2 as Spin } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_auth/receipts")({ component: Receipts });
@@ -39,6 +39,9 @@ function ReceiptItemRow({ item }: { item: any }) {
 function Receipts() {
   const navigate = useNavigate();
   const [list, setList] = useState<any[]>([]);
+  const [splitsByReceipt, setSplitsByReceipt] = useState<Record<string, any[]>>({});
+  const [splitOpenFor, setSplitOpenFor] = useState<any | null>(null);
+  const [splitBusy, setSplitBusy] = useState<string | null>(null);
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -51,9 +54,37 @@ function Receipts() {
 
   const load = async () => {
     const { data } = await supabase.from("receipts").select("*, receipt_items(*)").order("purchased_at", { ascending: false });
-    setList(data ?? []);
+    const rows = data ?? [];
+    setList(rows);
+    const ids = rows.map((r: any) => r.id);
+    if (ids.length) {
+      const { data: sp } = await (supabase as any)
+        .from("split_requests")
+        .select("*")
+        .in("receipt_id", ids);
+      const map: Record<string, any[]> = {};
+      (sp ?? []).forEach((s: any) => {
+        if (!s.receipt_id) return;
+        (map[s.receipt_id] ||= []).push(s);
+      });
+      setSplitsByReceipt(map);
+    } else {
+      setSplitsByReceipt({});
+    }
   };
   useEffect(() => { load(); }, []);
+
+  const paySplitFromHistory = async (s: any) => {
+    setSplitBusy(s.id);
+    const { error } = await (supabase as any).rpc("pay_split_request", { _split_id: s.id });
+    setSplitBusy(null);
+    if (error) return toast.error(error.message);
+    window.dispatchEvent(new CustomEvent("smartreceipt:payment-success", {
+      detail: { direction: "sent", amount: Number(s.amount), name: s.to_label || "Friend", item: s.item_name },
+    }));
+    window.dispatchEvent(new Event("smartreceipt:balance-updated"));
+    load();
+  };
 
   const remove = async (id: string) => {
     const { error } = await supabase.from("receipts").delete().eq("id", id);
@@ -231,6 +262,14 @@ function Receipts() {
               <div className="text-right">
                 <div className="font-bold">{fmtRM(r.total_amount)}</div>
                 <div className="flex justify-end">
+                  {(splitsByReceipt[r.id]?.length ?? 0) > 0 && (
+                    <Button size="sm" variant="ghost" onClick={() => setSplitOpenFor(r)} title="Split history" className="relative">
+                      <Users className="w-4 h-4" />
+                      <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-[16px] rounded-full bg-primary text-primary-foreground text-[9px] font-bold flex items-center justify-center px-1">
+                        {splitsByReceipt[r.id].length}
+                      </span>
+                    </Button>
+                  )}
                   <Button size="sm" variant="ghost" onClick={() => openEdit(r)}><Pencil className="w-4 h-4" /></Button>
                   <Button size="sm" variant="ghost" onClick={() => remove(r.id)}><Trash2 className="w-4 h-4" /></Button>
                 </div>
@@ -241,10 +280,69 @@ function Receipts() {
                 <ReceiptItemRow key={it.id} item={it} />
               ))}
             </div>
+            {(splitsByReceipt[r.id]?.length ?? 0) > 0 && (
+              <button
+                type="button"
+                onClick={() => setSplitOpenFor(r)}
+                className="mt-3 w-full text-left flex items-center gap-2 px-3 py-2 rounded-lg bg-primary/5 border border-primary/15 hover:bg-primary/10 transition text-xs"
+              >
+                <Users className="w-3.5 h-3.5 text-primary" />
+                <span className="flex-1">
+                  Shared with {splitsByReceipt[r.id].length} {splitsByReceipt[r.id].length === 1 ? "person" : "people"}
+                </span>
+                <span className="text-muted-foreground">View</span>
+              </button>
+            )}
           </Card>
         ))}
           </div>
       </section>
+
+      {/* Split history dialog */}
+      <Dialog open={!!splitOpenFor} onOpenChange={(o) => !o && setSplitOpenFor(null)}>
+        <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Users className="w-5 h-5 text-primary" /> Split history
+            </DialogTitle>
+          </DialogHeader>
+          {splitOpenFor && (
+            <div className="space-y-3">
+              <div className="text-xs text-muted-foreground">
+                {splitOpenFor.merchant ?? "Unknown"} · {new Date(splitOpenFor.purchased_at).toLocaleDateString("en-MY")}
+              </div>
+              {(splitsByReceipt[splitOpenFor.id] ?? []).map((s: any) => (
+                <div key={s.id} className="flex items-center gap-3 p-3 rounded-xl bg-muted/40">
+                  <div className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 ${s.status === "paid" ? "bg-success/15 text-success" : "bg-warning/15 text-warning"}`}>
+                    {s.status === "paid" ? <Check className="w-4 h-4" /> : <Clock className="w-4 h-4" />}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="font-medium text-sm truncate">{s.item_name}</div>
+                    <div className="text-[11px] text-muted-foreground truncate">
+                      {s.to_label ?? "Friend"} · {s.status === "paid" && s.paid_at ? `Paid ${new Date(s.paid_at).toLocaleDateString("en-MY")}` : "Pending"}
+                    </div>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <div className="text-sm font-semibold tabular-nums">{fmtRM(Number(s.amount))}</div>
+                    {s.status === "pending" && s.from_user !== s.to_user_id && (
+                      <span className="text-[10px] text-warning">awaiting</span>
+                    )}
+                  </div>
+                </div>
+              ))}
+              {!(splitsByReceipt[splitOpenFor.id] ?? []).length && (
+                <p className="text-sm text-muted-foreground text-center py-4">No splits.</p>
+              )}
+              <div className="flex items-center justify-between border-t border-border pt-3 text-sm">
+                <span className="text-muted-foreground">Total split</span>
+                <span className="font-semibold">
+                  {fmtRM((splitsByReceipt[splitOpenFor.id] ?? []).reduce((s: number, x: any) => s + Number(x.amount), 0))}
+                </span>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
@@ -255,6 +353,26 @@ function Receipts() {
             {editImageUrl && (
               <div className="rounded-lg border border-border p-2 bg-muted/30">
                 <img src={editImageUrl} alt="receipt" className="w-full h-auto rounded-md object-contain max-h-72 mx-auto" />
+              </div>
+            )}
+            {editing && (splitsByReceipt[editing.id]?.length ?? 0) > 0 && (
+              <div className="rounded-lg border border-primary/20 bg-primary/5 p-3 space-y-2">
+                <div className="flex items-center gap-2 text-xs font-semibold">
+                  <Users className="w-3.5 h-3.5 text-primary" />
+                  Splits ({splitsByReceipt[editing.id].length})
+                </div>
+                {splitsByReceipt[editing.id].map((s: any) => (
+                  <div key={s.id} className="flex items-center justify-between text-xs gap-2">
+                    <span className="truncate flex-1">
+                      <span className="font-medium">{s.item_name}</span>
+                      <span className="text-muted-foreground"> · {s.to_label ?? "Friend"}</span>
+                    </span>
+                    <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${s.status === "paid" ? "bg-success/15 text-success" : "bg-warning/15 text-warning"}`}>
+                      {s.status}
+                    </span>
+                    <span className="font-semibold tabular-nums">{fmtRM(Number(s.amount))}</span>
+                  </div>
+                ))}
               </div>
             )}
             <div className="grid sm:grid-cols-2 gap-4">
