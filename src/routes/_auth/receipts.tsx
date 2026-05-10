@@ -9,7 +9,7 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { fmtRM } from "@/lib/format";
-import { Receipt, Upload, Trash2, Camera, Loader2, Pencil, Plus, Save, Users, Check, Clock, Loader2 as Spin } from "lucide-react";
+import { Receipt, Upload, Trash2, Camera, Loader2, Pencil, Plus, Save, Users, Check, Clock } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_auth/receipts")({ component: Receipts });
@@ -41,7 +41,6 @@ function Receipts() {
   const [list, setList] = useState<any[]>([]);
   const [splitsByReceipt, setSplitsByReceipt] = useState<Record<string, any[]>>({});
   const [splitOpenFor, setSplitOpenFor] = useState<any | null>(null);
-  const [splitBusy, setSplitBusy] = useState<string | null>(null);
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -74,17 +73,6 @@ function Receipts() {
   };
   useEffect(() => { load(); }, []);
 
-  const paySplitFromHistory = async (s: any) => {
-    setSplitBusy(s.id);
-    const { error } = await (supabase as any).rpc("pay_split_request", { _split_id: s.id });
-    setSplitBusy(null);
-    if (error) return toast.error(error.message);
-    window.dispatchEvent(new CustomEvent("smartreceipt:payment-success", {
-      detail: { direction: "sent", amount: Number(s.amount), name: s.to_label || "Friend", item: s.item_name },
-    }));
-    window.dispatchEvent(new Event("smartreceipt:balance-updated"));
-    load();
-  };
 
   const remove = async (id: string) => {
     const { error } = await supabase.from("receipts").delete().eq("id", id);
