@@ -458,11 +458,19 @@ function Receipts() {
             .maybeSingle();
           if (!data) { toast.error("Receipt unavailable"); return; }
           setSharedReceipt(data);
-          if ((data as any).image_path) {
-            const { data: signed } = await supabase.storage.from("receipts").createSignedUrl((data as any).image_path, 600);
-            setSharedReceiptUrl(signed?.signedUrl ?? "");
-          } else {
-            setSharedReceiptUrl("");
+          setSharedReceiptUrl("");
+          const imgUrl = (data as any).image_url;
+          if (imgUrl) {
+            try {
+              const m = imgUrl.match(/\/receipts\/([^?]+)/);
+              const path = m?.[1];
+              if (path) {
+                const { data: signed } = await supabase.storage.from("receipts").createSignedUrl(decodeURIComponent(path), 3600);
+                setSharedReceiptUrl(signed?.signedUrl ?? imgUrl);
+              } else {
+                setSharedReceiptUrl(imgUrl);
+              }
+            } catch { setSharedReceiptUrl(imgUrl); }
           }
         }}
       />
@@ -498,7 +506,7 @@ function Receipts() {
               </div>
               <div className="flex items-center justify-between border-t border-border pt-2.5 text-xs">
                 <span className="text-muted-foreground">Total</span>
-                <span className="font-semibold tabular-nums">{fmtRM(Number(sharedReceipt.total ?? 0))}</span>
+                <span className="font-semibold tabular-nums">{fmtRM(Number(sharedReceipt.total_amount ?? 0))}</span>
               </div>
             </div>
           )}
