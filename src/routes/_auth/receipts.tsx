@@ -53,6 +53,8 @@ function Receipts() {
   const [editPurchasedAt, setEditPurchasedAt] = useState("");
   const [savingEdit, setSavingEdit] = useState(false);
   const [editImageUrl, setEditImageUrl] = useState<string>("");
+  const [sharedReceipt, setSharedReceipt] = useState<any | null>(null);
+  const [sharedReceiptUrl, setSharedReceiptUrl] = useState<string>("");
 
   const load = async () => {
     const { data } = await supabase.from("receipts").select("*, receipt_items(*)").order("purchased_at", { ascending: false });
@@ -446,11 +448,62 @@ function Receipts() {
       <SplitsDialog
         open={splitsDialogOpen}
         onOpenChange={setSplitsDialogOpen}
-        onOpenReceipt={(rid) => {
+        onOpenReceipt={async (rid) => {
           const r = list.find(x => x.id === rid);
-          if (r) openEdit(r);
+          if (r) { openEdit(r); return; }
+          const { data } = await supabase
+            .from("receipts")
+            .select("*, receipt_items(*)")
+            .eq("id", rid)
+            .maybeSingle();
+          if (!data) { toast.error("Receipt unavailable"); return; }
+          setSharedReceipt(data);
+          if ((data as any).image_path) {
+            const { data: signed } = await supabase.storage.from("receipts").createSignedUrl((data as any).image_path, 600);
+            setSharedReceiptUrl(signed?.signedUrl ?? "");
+          } else {
+            setSharedReceiptUrl("");
+          }
         }}
       />
+
+      <Dialog open={!!sharedReceipt} onOpenChange={(o) => { if (!o) { setSharedReceipt(null); setSharedReceiptUrl(""); } }}>
+        <DialogContent className="sm:max-w-md w-[calc(100vw-1rem)] max-w-[calc(100vw-1rem)] max-h-[85vh] overflow-y-auto overflow-x-hidden p-3 sm:p-5">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-base">
+              <Receipt className="w-5 h-5 text-primary" /> Shared receipt
+            </DialogTitle>
+          </DialogHeader>
+          {sharedReceipt && (
+            <div className="space-y-3 min-w-0">
+              {sharedReceiptUrl && (
+                <div className="rounded-lg border border-border p-2 bg-muted/30">
+                  <img src={sharedReceiptUrl} alt="receipt" className="w-full h-auto rounded-md object-contain max-h-60 mx-auto" />
+                </div>
+              )}
+              <div className="text-xs">
+                <div className="font-semibold truncate">{sharedReceipt.merchant ?? "Unknown"}</div>
+                <div className="text-muted-foreground">{new Date(sharedReceipt.purchased_at).toLocaleString("en-MY")}</div>
+              </div>
+              <div className="space-y-1.5">
+                {(sharedReceipt.receipt_items ?? []).map((it: any) => (
+                  <div key={it.id} className="flex items-start justify-between gap-2 text-xs px-2 py-1.5 rounded-md bg-muted/40 min-w-0">
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate">{it.name}</div>
+                      <div className="text-[10px] text-muted-foreground">{it.category} · qty {it.quantity}</div>
+                    </div>
+                    <div className="shrink-0 tabular-nums">{fmtRM(Number(it.price) * Number(it.quantity))}</div>
+                  </div>
+                ))}
+              </div>
+              <div className="flex items-center justify-between border-t border-border pt-2.5 text-xs">
+                <span className="text-muted-foreground">Total</span>
+                <span className="font-semibold tabular-nums">{fmtRM(Number(sharedReceipt.total ?? 0))}</span>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
