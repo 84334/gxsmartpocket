@@ -94,21 +94,21 @@ export function SplitsDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md w-[calc(100vw-2rem)] max-h-[85vh] overflow-y-auto p-4 sm:p-6">
+      <DialogContent className="sm:max-w-md w-[calc(100vw-1rem)] max-w-[calc(100vw-1rem)] max-h-[85vh] overflow-y-auto overflow-x-hidden p-3 sm:p-5">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-base">
             <Users className="w-5 h-5 text-primary" /> Splits
           </DialogTitle>
         </DialogHeader>
 
-        <div className="grid grid-cols-2 gap-2">
-          <Card className="p-3 rounded-xl">
+        <div className="grid grid-cols-2 gap-2 min-w-0">
+          <Card className="p-2.5 rounded-xl min-w-0">
             <div className="text-[10px] uppercase tracking-wide text-muted-foreground">You owe</div>
-            <div className="text-lg font-bold mt-0.5 text-warning tabular-nums">{fmtRM(totalOwe)}</div>
+            <div className="text-base font-bold mt-0.5 text-warning tabular-nums truncate">{fmtRM(totalOwe)}</div>
           </Card>
-          <Card className="p-3 rounded-xl">
+          <Card className="p-2.5 rounded-xl min-w-0">
             <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Owed to you</div>
-            <div className="text-lg font-bold mt-0.5 text-success tabular-nums">{fmtRM(totalOwed)}</div>
+            <div className="text-base font-bold mt-0.5 text-success tabular-nums truncate">{fmtRM(totalOwed)}</div>
           </Card>
         </div>
 
@@ -135,7 +135,7 @@ export function SplitsDialog({
             const otherId = tab === "incoming" ? s.from_user : s.to_user_id;
             const otherName = otherId ? profilesById[otherId] ?? s.to_label ?? "Friend" : (s.to_label ?? "Untagged");
             return (
-              <Card key={s.id} className="p-3 rounded-xl">
+              <Card key={s.id} className="p-2.5 rounded-xl min-w-0 overflow-hidden">
                 <button
                   type="button"
                   onClick={() => {
@@ -144,18 +144,18 @@ export function SplitsDialog({
                       onOpenChange(false);
                     }
                   }}
-                  className="w-full flex items-center gap-2.5 text-left"
+                  className="w-full flex items-center gap-2 text-left min-w-0"
                 >
-                  <div className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 ${tab === "incoming" ? "bg-warning/15 text-warning" : "bg-success/15 text-success"}`}>
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${tab === "incoming" ? "bg-warning/15 text-warning" : "bg-success/15 text-success"}`}>
                     {tab === "incoming" ? <ArrowUpRight className="w-4 h-4" /> : <ArrowDownLeft className="w-4 h-4" />}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <div className="font-medium text-sm truncate">{s.item_name}</div>
+                    <div className="font-medium text-xs truncate">{s.item_name}</div>
                     <div className="text-[11px] text-muted-foreground truncate">
                       {tab === "incoming" ? `From ${otherName}` : `To ${otherName}`}
                       {s.merchant ? ` · ${s.merchant}` : ""}
                     </div>
-                    <div className="text-[10px] text-muted-foreground/80 mt-0.5">
+                    <div className="text-[10px] text-muted-foreground/80 mt-0.5 truncate">
                       {new Date(s.created_at).toLocaleDateString("en-MY")}
                       {s.receipt_id && (
                         <span className="inline-flex items-center gap-0.5 ml-1.5 text-primary">
@@ -164,8 +164,8 @@ export function SplitsDialog({
                       )}
                     </div>
                   </div>
-                  <div className="text-right shrink-0">
-                    <div className="font-semibold tabular-nums text-sm">{fmtRM(Number(s.amount))}</div>
+                  <div className="text-right shrink-0 max-w-[80px]">
+                    <div className="font-semibold tabular-nums text-xs truncate">{fmtRM(Number(s.amount))}</div>
                     <StatusPill status={s.status} />
                   </div>
                 </button>
