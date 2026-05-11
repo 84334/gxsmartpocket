@@ -301,30 +301,30 @@ function Receipts() {
 
       {/* Split history dialog */}
       <Dialog open={!!splitOpenFor} onOpenChange={(o) => !o && setSplitOpenFor(null)}>
-        <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-md w-[calc(100vw-1rem)] max-w-[calc(100vw-1rem)] max-h-[85vh] overflow-y-auto overflow-x-hidden p-3 sm:p-5">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
+            <DialogTitle className="flex items-center gap-2 text-base">
               <Users className="w-5 h-5 text-primary" /> Split history
             </DialogTitle>
           </DialogHeader>
           {splitOpenFor && (
-            <div className="space-y-3">
-              <div className="text-xs text-muted-foreground">
+            <div className="space-y-2 min-w-0">
+              <div className="text-[11px] text-muted-foreground truncate">
                 {splitOpenFor.merchant ?? "Unknown"} · {new Date(splitOpenFor.purchased_at).toLocaleDateString("en-MY")}
               </div>
               {(splitsByReceipt[splitOpenFor.id] ?? []).map((s: any) => (
-                <div key={s.id} className="flex items-center gap-3 p-3 rounded-xl bg-muted/40">
-                  <div className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 ${s.status === "paid" ? "bg-success/15 text-success" : "bg-warning/15 text-warning"}`}>
+                <div key={s.id} className="flex items-center gap-2 p-2.5 rounded-xl bg-muted/40 min-w-0 overflow-hidden">
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${s.status === "paid" ? "bg-success/15 text-success" : "bg-warning/15 text-warning"}`}>
                     {s.status === "paid" ? <Check className="w-4 h-4" /> : <Clock className="w-4 h-4" />}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <div className="font-medium text-sm truncate">{s.item_name}</div>
+                    <div className="font-medium text-xs truncate">{s.item_name}</div>
                     <div className="text-[11px] text-muted-foreground truncate">
                       {s.to_label ?? "Friend"} · {s.status === "paid" && s.paid_at ? `Paid ${new Date(s.paid_at).toLocaleDateString("en-MY")}` : "Pending"}
                     </div>
                   </div>
-                  <div className="text-right shrink-0">
-                    <div className="text-sm font-semibold tabular-nums">{fmtRM(Number(s.amount))}</div>
+                  <div className="text-right shrink-0 max-w-[80px]">
+                    <div className="text-xs font-semibold tabular-nums truncate">{fmtRM(Number(s.amount))}</div>
                     {s.status === "pending" && s.from_user !== s.to_user_id && (
                       <span className="text-[10px] text-warning">awaiting</span>
                     )}
@@ -332,11 +332,11 @@ function Receipts() {
                 </div>
               ))}
               {!(splitsByReceipt[splitOpenFor.id] ?? []).length && (
-                <p className="text-sm text-muted-foreground text-center py-4">No splits.</p>
+                <p className="text-xs text-muted-foreground text-center py-4">No splits.</p>
               )}
-              <div className="flex items-center justify-between border-t border-border pt-3 text-sm">
+              <div className="flex items-center justify-between border-t border-border pt-2.5 text-xs">
                 <span className="text-muted-foreground">Total split</span>
-                <span className="font-semibold">
+                <span className="font-semibold tabular-nums">
                   {fmtRM((splitsByReceipt[splitOpenFor.id] ?? []).reduce((s: number, x: any) => s + Number(x.amount), 0))}
                 </span>
               </div>
