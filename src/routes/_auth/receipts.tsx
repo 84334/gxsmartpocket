@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { fmtRM } from "@/lib/format";
 import { Receipt, Upload, Trash2, Camera, Loader2, Pencil, Plus, Save, Users, Check, Clock } from "lucide-react";
 import { toast } from "sonner";
+import { SplitsDialog } from "@/components/SplitsDialog";
 
 export const Route = createFileRoute("/_auth/receipts")({ component: Receipts });
 
@@ -41,6 +42,8 @@ function Receipts() {
   const [list, setList] = useState<any[]>([]);
   const [splitsByReceipt, setSplitsByReceipt] = useState<Record<string, any[]>>({});
   const [splitOpenFor, setSplitOpenFor] = useState<any | null>(null);
+  const [splitsDialogOpen, setSplitsDialogOpen] = useState(false);
+  const [allSplitsCount, setAllSplitsCount] = useState(0);
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -67,8 +70,10 @@ function Receipts() {
         (map[s.receipt_id] ||= []).push(s);
       });
       setSplitsByReceipt(map);
+      setAllSplitsCount((sp ?? []).length);
     } else {
       setSplitsByReceipt({});
+      setAllSplitsCount(0);
     }
   };
   useEffect(() => { load(); }, []);
@@ -188,6 +193,14 @@ function Receipts() {
           <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Receipts</h1>
           <p className="text-sm text-muted-foreground">Scan new receipts and browse your history</p>
         </div>
+        <Button variant="outline" size="sm" onClick={() => setSplitsDialogOpen(true)} className="relative">
+          <Users className="w-4 h-4" /> Splits
+          {allSplitsCount > 0 && (
+            <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center px-1">
+              {allSplitsCount}
+            </span>
+          )}
+        </Button>
       </div>
 
       <section className="space-y-3">
@@ -429,6 +442,15 @@ function Receipts() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <SplitsDialog
+        open={splitsDialogOpen}
+        onOpenChange={setSplitsDialogOpen}
+        onOpenReceipt={(rid) => {
+          const r = list.find(x => x.id === rid);
+          if (r) openEdit(r);
+        }}
+      />
     </div>
   );
 }
