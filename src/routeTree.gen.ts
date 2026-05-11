@@ -15,7 +15,6 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as AuthRouteImport } from './routes/_auth'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthUploadRouteImport } from './routes/_auth/upload'
-import { Route as AuthSplitsRouteImport } from './routes/_auth/splits'
 import { Route as AuthReviewRouteImport } from './routes/_auth/review'
 import { Route as AuthReceiptsRouteImport } from './routes/_auth/receipts'
 import { Route as AuthOnboardingRouteImport } from './routes/_auth/onboarding'
@@ -50,11 +49,6 @@ const IndexRoute = IndexRouteImport.update({
 const AuthUploadRoute = AuthUploadRouteImport.update({
   id: '/upload',
   path: '/upload',
-  getParentRoute: () => AuthRoute,
-} as any)
-const AuthSplitsRoute = AuthSplitsRouteImport.update({
-  id: '/splits',
-  path: '/splits',
   getParentRoute: () => AuthRoute,
 } as any)
 const AuthReviewRoute = AuthReviewRouteImport.update({
@@ -99,7 +93,6 @@ export interface FileRoutesByFullPath {
   '/onboarding': typeof AuthOnboardingRoute
   '/receipts': typeof AuthReceiptsRoute
   '/review': typeof AuthReviewRoute
-  '/splits': typeof AuthSplitsRoute
   '/upload': typeof AuthUploadRoute
 }
 export interface FileRoutesByTo {
@@ -113,7 +106,6 @@ export interface FileRoutesByTo {
   '/onboarding': typeof AuthOnboardingRoute
   '/receipts': typeof AuthReceiptsRoute
   '/review': typeof AuthReviewRoute
-  '/splits': typeof AuthSplitsRoute
   '/upload': typeof AuthUploadRoute
 }
 export interface FileRoutesById {
@@ -129,7 +121,6 @@ export interface FileRoutesById {
   '/_auth/onboarding': typeof AuthOnboardingRoute
   '/_auth/receipts': typeof AuthReceiptsRoute
   '/_auth/review': typeof AuthReviewRoute
-  '/_auth/splits': typeof AuthSplitsRoute
   '/_auth/upload': typeof AuthUploadRoute
 }
 export interface FileRouteTypes {
@@ -145,7 +136,6 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/receipts'
     | '/review'
-    | '/splits'
     | '/upload'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -159,7 +149,6 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/receipts'
     | '/review'
-    | '/splits'
     | '/upload'
   id:
     | '__root__'
@@ -174,7 +163,6 @@ export interface FileRouteTypes {
     | '/_auth/onboarding'
     | '/_auth/receipts'
     | '/_auth/review'
-    | '/_auth/splits'
     | '/_auth/upload'
   fileRoutesById: FileRoutesById
 }
@@ -230,13 +218,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthUploadRouteImport
       parentRoute: typeof AuthRoute
     }
-    '/_auth/splits': {
-      id: '/_auth/splits'
-      path: '/splits'
-      fullPath: '/splits'
-      preLoaderRoute: typeof AuthSplitsRouteImport
-      parentRoute: typeof AuthRoute
-    }
     '/_auth/review': {
       id: '/_auth/review'
       path: '/review'
@@ -289,7 +270,6 @@ interface AuthRouteChildren {
   AuthOnboardingRoute: typeof AuthOnboardingRoute
   AuthReceiptsRoute: typeof AuthReceiptsRoute
   AuthReviewRoute: typeof AuthReviewRoute
-  AuthSplitsRoute: typeof AuthSplitsRoute
   AuthUploadRoute: typeof AuthUploadRoute
 }
 
@@ -300,7 +280,6 @@ const AuthRouteChildren: AuthRouteChildren = {
   AuthOnboardingRoute: AuthOnboardingRoute,
   AuthReceiptsRoute: AuthReceiptsRoute,
   AuthReviewRoute: AuthReviewRoute,
-  AuthSplitsRoute: AuthSplitsRoute,
   AuthUploadRoute: AuthUploadRoute,
 }
 
@@ -316,3 +295,12 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+  }
+}
